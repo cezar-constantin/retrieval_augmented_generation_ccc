@@ -604,6 +604,20 @@ input[type="range"] {
   color: var(--muted);
 }
 
+.semantic-map-caption {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(163, 180, 235, 0.24);
+  color: var(--blue-deep);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
 .map-point {
   position: absolute;
   width: 18px;
@@ -1022,6 +1036,10 @@ input[type="range"] {
   margin: 0;
 }
 
+.mobile-chart-note {
+  border-style: dashed;
+}
+
 .embedding-stage-plot {
   width: 100%;
   height: auto;
@@ -1297,6 +1315,10 @@ input[type="range"] {
 
 .retrieval-chart-node:hover .retrieval-chart-hover {
   opacity: 1;
+}
+
+.retrieval-chart-plot.is-mobile-static .retrieval-chart-hover {
+  display: none;
 }
 
 .retrieval-chart-link {
@@ -1652,6 +1674,13 @@ input[type="range"] {
     min-height: 280px;
   }
 
+  .semantic-map-caption {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    font-size: 0.78rem;
+  }
+
   .embedding-stage-display {
     padding: 14px;
   }
@@ -1679,5 +1708,9 @@ input[type="range"] {
   .retrieval-origin-label,
   .retrieval-query-label {
     font-size: 0.72rem;
+  }
+
+  .retrieval-chart-legend {
+    justify-content: flex-start;
   }
 }

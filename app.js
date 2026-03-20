@@ -6,6 +6,9 @@ const FALLBACK_EMBED_DIMENSIONS = 192;
 const EXTRACTION_VIEWER_TARGET_CHARS = 900;
 const EXTRACTION_VIEWER_MIN_CHARS = 420;
 const TEACHING_TOKEN_LIMIT = 28;
+const MOBILE_CHART_BREAKPOINT = 768;
+const MOBILE_BACKGROUND_POINT_LIMIT = 20;
+const MOBILE_TOKEN_POINT_LIMIT = 14;
 const CONTENT_STOPWORDS = new Set([
   "the",
   "and",
@@ -75,6 +78,9 @@ const state = {
     stageKey: "tokenization",
     paragraphId: null,
   },
+  ui: {
+    mobileChartMode: false,
+  },
   projectionAxes: null,
 };
 
@@ -143,6 +149,36 @@ function escapeHtml(value) {
 
 function createId(prefix, suffix) {
   return `${prefix}-${suffix}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function detectMobileChartMode() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+
+  return (
+    window.matchMedia(`(max-width: ${MOBILE_CHART_BREAKPOINT}px)`).matches ||
+    window.matchMedia("(pointer: coarse)").matches
+  );
+}
+
+function sampleEvenly(items, limit) {
+  if (items.length <= limit) {
+    return items;
+  }
+
+  const sampled = [];
+  const seenIndexes = new Set();
+  for (let index = 0; index < limit; index += 1) {
+    const candidateIndex = Math.round((index * (items.length - 1)) / Math.max(limit - 1, 1));
+    if (seenIndexes.has(candidateIndex)) {
+      continue;
+    }
+    seenIndexes.add(candidateIndex);
+    sampled.push(items[candidateIndex]);
+  }
+
+  return sampled;
 }
 
 function summarizeText(text, maxLength = 220) {
@@ -1476,13 +1512,19 @@ function buildScatterGuides(width = 760, height = 460) {
 }
 
 function buildTokenScatterSvg(points, options = {}) {
-  const width = 760;
-  const height = 460;
+  const mobileMode = options.mobileMode ?? state.ui.mobileChartMode;
+  const width = mobileMode ? 680 : 760;
+  const height = mobileMode ? 360 : 460;
   const projectionKey = options.projectionKey || "projection";
-  const basePoints = points.map((point) => ({
+  let basePoints = points.map((point) => ({
     ...point,
     projection: point[projectionKey],
   }));
+
+  if (mobileMode) {
+    basePoints = sampleEvenly(basePoints, options.mobileLimit || MOBILE_TOKEN_POINT_LIMIT);
+  }
+
   const allPoints = options.centerPoint
     ? basePoints.concat([
         {
@@ -1525,7 +1567,7 @@ function buildTokenScatterSvg(points, options = {}) {
           const radius = 10 + clamp((point.importance || 0.7) * 5, 0, 6);
           const hoverTitle = options.titleBuilder ? options.titleBuilder(point) : point.token;
           const attentionLinks =
-            options.showAttentionLinks && point.influences
+            !mobileMode && options.showAttentionLinks && point.influences
               ? point.influences
                   .map((influence) => {
                     const target = pointLookup.get(influence.index);
@@ -1614,6 +1656,7 @@ function buildSentenceInfluenceMarkup(sentenceScores) {
 
 function buildSemanticSpaceSvg(selectedParagraph, teachingData) {
   const neighborIds = new Set(teachingData.semanticNeighbors.map((neighbor) => neighbor.id));
+  const mobileMode = state.ui.mobileChartMode;
   const points = state.paragraphs
     .filter((paragraph) => hasEmbeddingVector(paragraph.embedding))
     .map((paragraph) => ({
@@ -1627,9 +1670,13 @@ function buildSemanticSpaceSvg(selectedParagraph, teachingData) {
     return `<div class="empty-message">Semantic space appears once paragraph embeddings are ready.</div>`;
   }
 
-  const width = 760;
-  const height = 460;
-  const laidOutPoints = layoutScatterPoints(points, width, height);
+  const selectedPoints = points.filter((point) => point.isSelected || point.isNeighbor);
+  const backgroundPoints = points.filter((point) => !point.isSelected && !point.isNeighbor);
+  const displayPoints = mobileMode ? selectedPoints.concat(sampleEvenly(backgroundPoints, MOBILE_BACKGROUND_POINT_LIMIT)) : points;
+
+  const width = mobileMode ? 680 : 760;
+  const height = mobileMode ? 360 : 460;
+  const laidOutPoints = layoutScatterPoints(displayPoints, width, height);
 
   return `
     <svg class="embedding-stage-plot" viewBox="0 0 ${width} ${height}" aria-label="Semantic space">
@@ -1702,6 +1749,9 @@ function renderEmbeddingStageDisplay(selectedParagraph, detail, teachingData) {
 
   let visualHtml = "";
   let asideHtml = "";
+  const mobileChartNotice = state.ui.mobileChartMode
+    ? `<div class="embedding-stage-note mobile-chart-note"><p>Mobile view uses a lighter static chart so the simulator stays stable on phones.</p></div>`
+    : "";
 
   switch (detail.key) {
     case "tokenization":
@@ -1725,6 +1775,7 @@ function renderEmbeddingStageDisplay(selectedParagraph, detail, teachingData) {
           <p class="card-kicker">Tokens in this paragraph</p>
           <div class="token-chip-row">${teachingData.tokens.map((token) => `<span class="token-chip">${escapeHtml(token)}</span>`).join("")}</div>
         </div>
+        ${mobileChartNotice}
       `;
       break;
     case "transformer":
@@ -1757,6 +1808,7 @@ function renderEmbeddingStageDisplay(selectedParagraph, detail, teachingData) {
           <p class="card-kicker">Most connected tokens</p>
           <div class="token-chip-row">${attentionCentrality}</div>
         </div>
+        ${mobileChartNotice}
       `;
       break;
     case "pooling":
@@ -1786,6 +1838,7 @@ function renderEmbeddingStageDisplay(selectedParagraph, detail, teachingData) {
           <p class="card-kicker">Interpretation</p>
           <p>${escapeHtml(detail.text)}</p>
         </div>
+        ${mobileChartNotice}
       `;
       break;
     case "contextual":
@@ -1866,6 +1919,7 @@ function renderEmbeddingStageDisplay(selectedParagraph, detail, teachingData) {
               .join("")}
           </div>
         </div>
+        ${mobileChartNotice}
       `;
       break;
     default:
@@ -2017,14 +2071,19 @@ function renderSemanticMap() {
     });
   }
 
-  const xs = points.map((point) => point.projection.x);
-  const ys = points.map((point) => point.projection.y);
+  const mobileMode = state.ui.mobileChartMode;
+  const prioritizedPoints = points.filter((point) => point.isQuery || point.isRetrieved);
+  const backgroundPoints = points.filter((point) => !point.isQuery && !point.isRetrieved);
+  const displayPoints = mobileMode ? prioritizedPoints.concat(sampleEvenly(backgroundPoints, MOBILE_BACKGROUND_POINT_LIMIT)) : points;
+
+  const xs = displayPoints.map((point) => point.projection.x);
+  const ys = displayPoints.map((point) => point.projection.y);
   const minX = Math.min(...xs);
   const maxX = Math.max(...xs);
   const minY = Math.min(...ys);
   const maxY = Math.max(...ys);
 
-  elements.semanticMap.innerHTML = points
+  const pointMarkup = displayPoints
     .map((point) => {
       const left = 8 + ((point.projection.x - minX) / Math.max(maxX - minX, 1e-6)) * 84;
       const top = 8 + ((point.projection.y - minY) / Math.max(maxY - minY, 1e-6)) * 84;
@@ -2048,6 +2107,12 @@ function renderSemanticMap() {
       `;
     })
     .join("");
+
+  elements.semanticMap.innerHTML = `${pointMarkup}${
+    mobileMode
+      ? '<div class="semantic-map-caption">Mobile view shows a lighter subset of points for stability.</div>'
+      : ""
+  }`;
 }
 
 function renderRankingList() {
@@ -2084,6 +2149,7 @@ function buildRetrievalChartMarkup() {
     return `<div class="empty-message">Run a query to draw the retrieval map.</div>`;
   }
 
+  const mobileMode = state.ui.mobileChartMode;
   const retrievedIds = new Set(state.retrieval.topResults.map((result) => result.id));
   const points = state.paragraphs
     .filter((paragraph) => hasEmbeddingVector(paragraph.embedding))
@@ -2118,13 +2184,15 @@ function buildRetrievalChartMarkup() {
   }
   const paragraphPoints = laidOutPoints.filter((point) => !point.isQuery && !point.isOrigin);
   const retrievedPoints = paragraphPoints.filter((point) => point.isRetrieved);
+  const backgroundPoints = mobileMode
+    ? sampleEvenly(paragraphPoints.filter((point) => !point.isRetrieved), MOBILE_BACKGROUND_POINT_LIMIT)
+    : paragraphPoints.filter((point) => !point.isRetrieved);
 
   return `
     <div class="retrieval-chart-shell">
-      <svg class="retrieval-chart-plot" viewBox="0 0 ${width} ${height}" aria-label="Retrieval similarity map">
+      <svg class="retrieval-chart-plot ${mobileMode ? "is-mobile-static" : ""}" viewBox="0 0 ${width} ${height}" aria-label="Retrieval similarity map">
         ${buildScatterGuides(width, height)}
-        ${paragraphPoints
-          .filter((point) => !point.isRetrieved)
+        ${backgroundPoints
           .map(
             (point) => `
               <circle
@@ -2146,9 +2214,27 @@ function buildRetrievalChartMarkup() {
             const cosineLabel = `${Math.round(result.score * 100)}%`;
             const cosineX = (point.plotX + queryPoint.plotX) / 2;
             const cosineY = Math.min(point.plotY, queryPoint.plotY) - 18;
+            const mobileLines = mobileMode
+              ? `
+                <line
+                  x1="${point.plotX}"
+                  y1="${point.plotY}"
+                  x2="${originPoint.plotX}"
+                  y2="${originPoint.plotY}"
+                  class="retrieval-chart-link is-chunk"
+                ></line>
+                <line
+                  x1="${queryPoint.plotX}"
+                  y1="${queryPoint.plotY}"
+                  x2="${originPoint.plotX}"
+                  y2="${originPoint.plotY}"
+                  class="retrieval-chart-link is-query"
+                ></line>
+              `
+              : "";
             return `
               <g class="retrieval-chart-node">
-                <g class="retrieval-chart-hover">
+                ${mobileMode ? mobileLines : `<g class="retrieval-chart-hover">
                   <line
                     x1="${point.plotX}"
                     y1="${point.plotY}"
@@ -2164,7 +2250,7 @@ function buildRetrievalChartMarkup() {
                     class="retrieval-chart-link is-query"
                   ></line>
                   <text x="${cosineX}" y="${cosineY}" class="retrieval-chart-cosine">cosine ${cosineLabel}</text>
-                </g>
+                </g>`}
                 <circle
                   cx="${point.plotX}"
                   cy="${point.plotY}"
@@ -2190,7 +2276,11 @@ function buildRetrievalChartMarkup() {
         </g>
       </svg>
       <div class="retrieval-chart-legend">
-        <span class="doc-stat">Hover a highlighted chunk to reveal the cosine value and its relation to the query.</span>
+        <span class="doc-stat">${
+          mobileMode
+            ? "Mobile view uses a lighter static map. Read the rank cards for the full details."
+            : "Hover a highlighted chunk to reveal the cosine value and its relation to the query."
+        }</span>
       </div>
     </div>
   `;
@@ -2727,6 +2817,18 @@ function loadDemoSet() {
   addPendingEntries(entries, true);
 }
 
+let responsiveRefreshTimer = null;
+
+function refreshViewportMode() {
+  const nextMode = detectMobileChartMode();
+  if (state.ui.mobileChartMode === nextMode) {
+    return;
+  }
+
+  state.ui.mobileChartMode = nextMode;
+  renderRetrievalOutputs();
+}
+
 function attachEvents() {
   elements.fileInput.addEventListener("change", handleFileSelection);
   elements.loadDemoButton.addEventListener("click", loadDemoSet);
@@ -2751,9 +2853,14 @@ function attachEvents() {
       markPipelineDirty(`Paragraph threshold changed to ${state.minParagraphLength} characters.`);
     }
   });
+  window.addEventListener("resize", () => {
+    window.clearTimeout(responsiveRefreshTimer);
+    responsiveRefreshTimer = window.setTimeout(refreshViewportMode, 120);
+  });
 }
 
 function initialize() {
+  state.ui.mobileChartMode = detectMobileChartMode();
   renderDocumentationContent();
   setupTabs();
   setupSuggestions();
