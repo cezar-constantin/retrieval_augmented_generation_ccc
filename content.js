@@ -59,34 +59,40 @@ for doc_name, text in document_texts.items():
       bullets: [],
       details: [
         {
+          key: "tokenization",
           title: "Tokenization",
           text:
-            "Text is broken into tokens so the model can process smaller language units instead of raw characters.",
+            "Inspect how the selected paragraph is split into tokens and where each token lands in a teaching-focused 2D projection.",
         },
         {
+          key: "transformer",
           title: "Transformer Architecture",
           text:
-            "The tokens pass through a Transformer that uses self-attention to understand relationships between words, even when the important words are far apart.",
+            "See the token vectors after self-attention. Hover a token to reveal which other tokens influenced it the most.",
         },
         {
+          key: "pooling",
           title: "Pooling",
           text:
-            "The model aggregates token-level information into one fixed-length vector that summarizes the paragraph.",
+            "Watch the token-level information collapse into one paragraph-level vector through vector aggregation.",
         },
         {
+          key: "contextual",
           title: "Contextual Meaning",
           text:
-            "Embeddings preserve context, so similar ideas written with different vocabulary can still land close to each other.",
+            "Compare the paragraph vector before and after contextual signals reshape it around the most informative tokens.",
         },
         {
+          key: "contrastive",
           title: "Contrastive Learning",
           text:
-            "Sentence-transformer models are fine-tuned so semantically similar sentences move closer together while unrelated ones are pushed apart.",
+            "See how sentence-level evidence nudges the paragraph vector during contrastive learning and which sentences matter most.",
         },
         {
+          key: "semantic-space",
           title: "Semantic Space",
           text:
-            "The final vectors live in a high-dimensional semantic space where cosine similarity becomes a meaningful retrieval signal.",
+            "Explore the final paragraph vector after the pipeline and see where it sits relative to the other paragraph embeddings.",
         },
       ],
       code: `model = SentenceTransformer('all-MiniLM-L6-v2')

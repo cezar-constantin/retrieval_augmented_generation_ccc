@@ -5,6 +5,48 @@ const PREVIEW_EMBED_DIMENSIONS = 24;
 const FALLBACK_EMBED_DIMENSIONS = 192;
 const EXTRACTION_VIEWER_TARGET_CHARS = 900;
 const EXTRACTION_VIEWER_MIN_CHARS = 420;
+const TEACHING_TOKEN_LIMIT = 28;
+const CONTENT_STOPWORDS = new Set([
+  "the",
+  "and",
+  "for",
+  "that",
+  "with",
+  "from",
+  "this",
+  "into",
+  "when",
+  "where",
+  "which",
+  "while",
+  "their",
+  "there",
+  "they",
+  "them",
+  "have",
+  "has",
+  "been",
+  "were",
+  "your",
+  "will",
+  "would",
+  "than",
+  "then",
+  "after",
+  "before",
+  "also",
+  "each",
+  "only",
+  "over",
+  "under",
+  "between",
+  "about",
+  "through",
+  "using",
+  "used",
+]);
+const teachingProjectionAxesCache = new Map();
+const teachingParagraphCache = new Map();
 
 const state = {
   pendingFiles: [],
@@ -28,6 +70,10 @@ const state = {
     label: "MiniLM on demand",
     pipeline: null,
     progress: "",
+  },
+  embeddingInspector: {
+    stageKey: "tokenization",
+    paragraphId: null,
   },
   projectionAxes: null,
 };
@@ -72,6 +118,7 @@ const elements = {
   paragraphBoard: document.getElementById("paragraph-board"),
   splittingSummaryPill: document.getElementById("splitting-summary-pill"),
   embeddingDetailsGrid: document.getElementById("embedding-details-grid"),
+  embeddingStageDisplay: document.getElementById("embedding-stage-display"),
   embeddingGrid: document.getElementById("embedding-grid"),
   retrievalQueryTitle: document.getElementById("retrieval-query-title"),
   retrievalQueryCopy: document.getElementById("retrieval-query-copy"),
@@ -557,6 +604,282 @@ function projectVector(vector) {
   return { x, y };
 }
 
+function getTeachingProjectionAxes(dimensions) {
+  if (!teachingProjectionAxesCache.has(dimensions)) {
+    teachingProjectionAxesCache.set(dimensions, buildProjectionAxes(dimensions));
+  }
+  return teachingProjectionAxesCache.get(dimensions);
+}
+
+function projectTeachingVector(vector) {
+  const { axisX, axisY } = getTeachingProjectionAxes(vector.length);
+  let x = 0;
+  let y = 0;
+  for (let index = 0; index < vector.length; index += 1) {
+    x += vector[index] * axisX[index];
+    y += vector[index] * axisY[index];
+  }
+  return { x, y };
+}
+
+function tokenizeForEmbeddingDisplay(text) {
+  return (String(text).match(/[A-Za-z0-9]+(?:['-][A-Za-z0-9]+)*/g) || []).slice(0, TEACHING_TOKEN_LIMIT);
+}
+
+function buildStageSentences(text) {
+  const sentences = splitIntoSentences(text);
+  if (sentences.length >= 2) {
+    return sentences.slice(0, 4);
+  }
+
+  const normalized = normalizeExtractedText(text);
+  if (!normalized) {
+    return [];
+  }
+
+  if (normalized.length <= 160) {
+    return [normalized];
+  }
+
+  const midpoint = Math.floor(normalized.length / 2);
+  let splitPoint = normalized.lastIndexOf(", ", midpoint);
+  if (splitPoint <= 0) {
+    splitPoint = normalized.lastIndexOf(" ", midpoint);
+  }
+  if (splitPoint <= 0) {
+    splitPoint = midpoint;
+  }
+
+  return [normalized.slice(0, splitPoint).trim(), normalized.slice(splitPoint).trim()].filter(Boolean);
+}
+
+function combineWeightedVectors(vectors, weights = null) {
+  if (!vectors.length) {
+    return [];
+  }
+
+  const combined = new Float32Array(vectors[0].length);
+  let totalWeight = 0;
+
+  vectors.forEach((vector, index) => {
+    const weight = weights ? weights[index] : 1;
+    totalWeight += weight;
+    for (let cursor = 0; cursor < vector.length; cursor += 1) {
+      combined[cursor] += vector[cursor] * weight;
+    }
+  });
+
+  if (!totalWeight) {
+    return normalizeVector(combined);
+  }
+
+  for (let index = 0; index < combined.length; index += 1) {
+    combined[index] /= totalWeight;
+  }
+
+  return normalizeVector(combined);
+}
+
+function mixVectors(left, right, rightWeight = 0.3) {
+  if (!left.length) {
+    return right;
+  }
+  if (!right.length) {
+    return left;
+  }
+
+  const mixed = new Float32Array(left.length);
+  const leftWeight = 1 - rightWeight;
+  for (let index = 0; index < left.length; index += 1) {
+    mixed[index] = left[index] * leftWeight + right[index] * rightWeight;
+  }
+  return normalizeVector(mixed);
+}
+
+function cosineToPercentage(value) {
+  return Math.round(clamp((value + 1) * 50, 0, 100));
+}
+
+function buildTokenTeachingVector(token, index, tokenCount) {
+  const base = buildFallbackEmbedding(`${token.toLowerCase()} ${index}`);
+  const adjusted = new Float32Array(base.length);
+  const positionalBias = (index - (tokenCount - 1) / 2) / Math.max(tokenCount, 1);
+
+  for (let cursor = 0; cursor < base.length; cursor += 1) {
+    adjusted[cursor] =
+      base[cursor] +
+      Math.sin((cursor + 1) * (index + 1) * 0.017) * 0.08 +
+      Math.cos((cursor + 3) * (positionalBias + 1.2)) * 0.03;
+  }
+
+  return normalizeVector(adjusted);
+}
+
+function buildTokenImportanceScores(tokens) {
+  return tokens.map((token, index) => {
+    const normalized = token.toLowerCase();
+    const stopwordPenalty = CONTENT_STOPWORDS.has(normalized) ? 0.35 : 1;
+    const lengthBoost = clamp(token.length / 8, 0.45, 1.4);
+    const positionBoost = 1 - Math.abs(index - (tokens.length - 1) / 2) / Math.max(tokens.length, 1) * 0.25;
+    return stopwordPenalty * lengthBoost * positionBoost;
+  });
+}
+
+function buildEmbeddingPreviewParagraphs() {
+  const sourceParagraphs = state.retrieval
+    ? state.retrieval.topResults.concat(state.paragraphs.slice(0, 6))
+    : state.paragraphs.slice(0, 6);
+  const uniqueParagraphs = [];
+  const seen = new Set();
+
+  for (const paragraph of sourceParagraphs) {
+    if (!paragraph || seen.has(paragraph.id) || !hasEmbeddingVector(paragraph.embedding)) {
+      continue;
+    }
+    seen.add(paragraph.id);
+    uniqueParagraphs.push(paragraph);
+    if (uniqueParagraphs.length >= 6) {
+      break;
+    }
+  }
+
+  return uniqueParagraphs;
+}
+
+function ensureSelectedEmbeddingParagraph() {
+  const previewParagraphs = buildEmbeddingPreviewParagraphs();
+  if (!previewParagraphs.length) {
+    state.embeddingInspector.paragraphId = null;
+    return null;
+  }
+
+  const selected = previewParagraphs.find((paragraph) => paragraph.id === state.embeddingInspector.paragraphId);
+  if (selected) {
+    return selected;
+  }
+
+  state.embeddingInspector.paragraphId = previewParagraphs[0].id;
+  return previewParagraphs[0];
+}
+
+function setEmbeddingInspectorStage(stageKey) {
+  state.embeddingInspector.stageKey = stageKey;
+  renderEmbeddingExplorer();
+}
+
+function setEmbeddingInspectorParagraph(paragraphId) {
+  state.embeddingInspector.paragraphId = paragraphId;
+  renderEmbeddingGrid();
+  renderEmbeddingExplorer();
+}
+
+function buildTeachingParagraphData(paragraph) {
+  const cacheKey = `${paragraph.id}:${paragraph.text.length}:${paragraph.charCount}`;
+  if (teachingParagraphCache.has(cacheKey)) {
+    return teachingParagraphCache.get(cacheKey);
+  }
+
+  const tokens = tokenizeForEmbeddingDisplay(paragraph.text);
+  const displayTokens = tokens.length ? tokens : ["paragraph"];
+  const tokenVectors = displayTokens.map((token, index) =>
+    buildTokenTeachingVector(token, index, displayTokens.length),
+  );
+  const tokenPoints = tokenVectors.map((vector, index) => ({
+    index,
+    token: displayTokens[index],
+    vector,
+    projection: projectTeachingVector(vector),
+  }));
+
+  const attentionNodes = tokenPoints.map((point, index) => {
+    const rankedInfluences = tokenPoints
+      .map((candidate, candidateIndex) => {
+        if (index === candidateIndex) {
+          return null;
+        }
+
+        const semanticScore = cosineSimilarity(point.vector, candidate.vector);
+        const distanceScore = 1 - Math.abs(index - candidateIndex) / Math.max(tokenPoints.length - 1, 1);
+        return {
+          index: candidateIndex,
+          score: semanticScore * 0.72 + distanceScore * 0.28,
+        };
+      })
+      .filter(Boolean)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, 3);
+
+    const influenceWeights = rankedInfluences.map((influence) => Math.max(0.08, (influence.score + 1) / 2));
+    const influenceVectors = rankedInfluences.map((influence) => tokenPoints[influence.index].vector);
+    const influenceBlend = combineWeightedVectors(influenceVectors, influenceWeights);
+    const transformedVector = influenceBlend.length ? mixVectors(point.vector, influenceBlend, 0.42) : point.vector;
+
+    return {
+      ...point,
+      influences: rankedInfluences.map((influence, influenceIndex) => ({
+        ...influence,
+        weight: influenceWeights[influenceIndex],
+        token: tokenPoints[influence.index].token,
+      })),
+      transformedVector,
+      transformedProjection: projectTeachingVector(transformedVector),
+    };
+  });
+
+  const transformedVectors = attentionNodes.map((node) => node.transformedVector);
+  const pooledVector = combineWeightedVectors(transformedVectors);
+  const pooledProjection = projectTeachingVector(pooledVector);
+
+  const tokenImportance = buildTokenImportanceScores(displayTokens);
+  const contextualEvidenceVector = combineWeightedVectors(transformedVectors, tokenImportance);
+  const contextualVector = mixVectors(pooledVector, contextualEvidenceVector, 0.34);
+
+  const sentences = buildStageSentences(paragraph.text);
+  const sentenceVectors = sentences.map((sentence) => buildFallbackEmbedding(sentence));
+  const sentenceScores = sentenceVectors.map((vector, index) => ({
+    text: sentences[index],
+    score: clamp((cosineSimilarity(vector, contextualVector) + 1) / 2, 0, 1),
+    vector,
+  }));
+  const sentenceWeights = sentenceScores.map((sentence) => 0.25 + sentence.score);
+  const sentenceBlend = sentenceVectors.length
+    ? combineWeightedVectors(
+        sentenceScores.map((sentence) => sentence.vector),
+        sentenceWeights,
+      )
+    : contextualVector;
+  const contrastiveVector = mixVectors(contextualVector, sentenceBlend, 0.28);
+
+  const finalVector = hasEmbeddingVector(paragraph.embedding) ? paragraph.embedding : contrastiveVector;
+
+  const semanticNeighbors = state.paragraphs
+    .filter((candidate) => candidate.id !== paragraph.id && hasEmbeddingVector(candidate.embedding))
+    .map((candidate) => ({
+      ...candidate,
+      score: cosineSimilarity(finalVector, candidate.embedding),
+      projection: projectVector(candidate.embedding),
+    }))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 4);
+
+  const result = {
+    tokens: displayTokens,
+    tokenPoints,
+    attentionNodes,
+    pooledVector,
+    pooledProjection,
+    contextualVector,
+    contrastiveVector,
+    finalVector,
+    tokenImportance,
+    sentenceScores,
+    semanticNeighbors,
+  };
+
+  teachingParagraphCache.set(cacheKey, result);
+  return result;
+}
+
 function getDocColor(index) {
   return DOC_PALETTE[index % DOC_PALETTE.length];
 }
@@ -612,18 +935,6 @@ function renderDocumentationContent() {
   renderBulletList(embeddingsBullets, embeddings.bullets);
   embeddingsBullets.hidden = !embeddings.bullets.length;
   document.getElementById("embeddings-code").textContent = embeddings.code;
-
-  elements.embeddingDetailsGrid.innerHTML = embeddings.details
-    .map(
-      (detail) => `
-        <article class="detail-card">
-          <p class="card-kicker">Additional details</p>
-          <h3>${escapeHtml(detail.title)}</h3>
-          <p>${escapeHtml(detail.text)}</p>
-        </article>
-      `,
-    )
-    .join("");
 
   const retrieval = tabs.retrieval;
   document.getElementById("retrieval-kicker").textContent = retrieval.kicker;
@@ -1125,74 +1436,552 @@ function hasEmbeddingVector(value) {
   return Array.isArray(value) && value.length > 0;
 }
 
+function buildEmbeddingBarsMarkup(vector, className = "embedding-preview") {
+  const preview = buildEmbeddingPreview(vector);
+  return `
+    <div class="${className}">
+      ${preview.map((value) => `<span class="embedding-bar" style="--level:${value}%;"></span>`).join("")}
+    </div>
+  `;
+}
+
+function layoutScatterPoints(points, width = 760, height = 460) {
+  if (!points.length) {
+    return [];
+  }
+
+  const xs = points.map((point) => point.projection.x);
+  const ys = points.map((point) => point.projection.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  return points.map((point) => ({
+    ...point,
+    plotX: 76 + ((point.projection.x - minX) / Math.max(maxX - minX, 1e-6)) * (width - 152),
+    plotY: 64 + ((point.projection.y - minY) / Math.max(maxY - minY, 1e-6)) * (height - 128),
+  }));
+}
+
+function buildScatterGuides(width = 760, height = 460) {
+  return `
+    <rect x="16" y="16" width="${width - 32}" height="${height - 32}" rx="28" class="embedding-plot-frame"></rect>
+    <line x1="24" y1="${height / 2}" x2="${width - 24}" y2="${height / 2}" class="embedding-axis-line"></line>
+    <line x1="${width / 2}" y1="24" x2="${width / 2}" y2="${height - 24}" class="embedding-axis-line"></line>
+  `;
+}
+
+function buildTokenScatterSvg(points, options = {}) {
+  const width = 760;
+  const height = 460;
+  const projectionKey = options.projectionKey || "projection";
+  const basePoints = points.map((point) => ({
+    ...point,
+    projection: point[projectionKey],
+  }));
+  const allPoints = options.centerPoint
+    ? basePoints.concat([
+        {
+          ...options.centerPoint,
+          projection: options.centerPoint.projection,
+          isCenter: true,
+        },
+      ])
+    : basePoints;
+  const laidOutPoints = layoutScatterPoints(allPoints, width, height);
+  const pointLookup = new Map(
+    laidOutPoints.filter((point) => !point.isCenter).map((point) => [point.index, point]),
+  );
+  const centerPoint = laidOutPoints.find((point) => point.isCenter);
+
+  return `
+    <svg class="embedding-stage-plot" viewBox="0 0 ${width} ${height}" aria-label="${escapeHtml(options.ariaLabel || "Embedding stage plot")}">
+      ${buildScatterGuides(width, height)}
+      ${
+        options.showPoolingLinks && centerPoint
+          ? laidOutPoints
+              .filter((point) => !point.isCenter)
+              .map(
+                (point) => `
+                  <line
+                    x1="${point.plotX}"
+                    y1="${point.plotY}"
+                    x2="${centerPoint.plotX}"
+                    y2="${centerPoint.plotY}"
+                    class="embedding-merge-line"
+                  ></line>
+                `,
+              )
+              .join("")
+          : ""
+      }
+      ${laidOutPoints
+        .filter((point) => !point.isCenter)
+        .map((point) => {
+          const radius = 8 + clamp((point.importance || 0.7) * 4, 0, 5);
+          const hoverTitle = options.titleBuilder ? options.titleBuilder(point) : point.token;
+          const attentionLinks =
+            options.showAttentionLinks && point.influences
+              ? point.influences
+                  .map((influence) => {
+                    const target = pointLookup.get(influence.index);
+                    if (!target) {
+                      return "";
+                    }
+                    return `
+                      <line
+                        x1="${point.plotX}"
+                        y1="${point.plotY}"
+                        x2="${target.plotX}"
+                        y2="${target.plotY}"
+                        class="embedding-attention-link"
+                        style="--link-opacity:${clamp(influence.weight, 0.18, 0.95)};"
+                      ></line>
+                    `;
+                  })
+                  .join("")
+              : "";
+
+          return `
+            <g class="embedding-token-node">
+              ${attentionLinks ? `<g class="embedding-attention-links">${attentionLinks}</g>` : ""}
+              <circle
+                cx="${point.plotX}"
+                cy="${point.plotY}"
+                r="${radius}"
+                class="embedding-token-point"
+                style="--token-color:${options.pointColor || "var(--blue)"};"
+              >
+                <title>${escapeHtml(hoverTitle)}</title>
+              </circle>
+              <text x="${point.plotX}" y="${point.plotY + 4}" class="embedding-token-label">${point.index + 1}</text>
+            </g>
+          `;
+        })
+        .join("")}
+      ${
+        centerPoint
+          ? `
+            <g class="embedding-center-node">
+              <circle
+                cx="${centerPoint.plotX}"
+                cy="${centerPoint.plotY}"
+                r="18"
+                class="embedding-center-point"
+              ></circle>
+              <text x="${centerPoint.plotX}" y="${centerPoint.plotY + 5}" class="embedding-center-label">P</text>
+              <text x="${centerPoint.plotX}" y="${centerPoint.plotY + 34}" class="embedding-center-caption">${escapeHtml(
+                options.centerPoint.label || "Paragraph vector",
+              )}</text>
+            </g>
+          `
+          : ""
+      }
+    </svg>
+  `;
+}
+
+function buildSentenceInfluenceMarkup(sentenceScores) {
+  if (!sentenceScores.length) {
+    return `<div class="empty-message">No sentence-level evidence was available for this paragraph.</div>`;
+  }
+
+  return `
+    <div class="sentence-influence-list">
+      ${sentenceScores
+        .map(
+          (sentence, index) => `
+            <article class="sentence-influence-card">
+              <div class="sentence-influence-header">
+                <span class="raw-split-index">Sentence ${index + 1}</span>
+                <span class="doc-stat">${Math.round(sentence.score * 100)}%</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width:${Math.round(sentence.score * 100)}%;"></div>
+              </div>
+              <p>${escapeHtml(sentence.text)}</p>
+            </article>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function buildSemanticSpaceSvg(selectedParagraph, teachingData) {
+  const neighborIds = new Set(teachingData.semanticNeighbors.map((neighbor) => neighbor.id));
+  const points = state.paragraphs
+    .filter((paragraph) => hasEmbeddingVector(paragraph.embedding))
+    .map((paragraph) => ({
+      ...paragraph,
+      projection: projectVector(paragraph.embedding),
+      isSelected: paragraph.id === selectedParagraph.id,
+      isNeighbor: neighborIds.has(paragraph.id),
+    }));
+
+  if (!points.length) {
+    return `<div class="empty-message">Semantic space appears once paragraph embeddings are ready.</div>`;
+  }
+
+  const width = 760;
+  const height = 460;
+  const laidOutPoints = layoutScatterPoints(points, width, height);
+
+  return `
+    <svg class="embedding-stage-plot" viewBox="0 0 ${width} ${height}" aria-label="Semantic space">
+      ${buildScatterGuides(width, height)}
+      ${laidOutPoints
+        .map((point) => {
+          const pointColor = point.isSelected
+            ? "var(--orange)"
+            : point.isNeighbor
+              ? "var(--cyan)"
+              : `${getDocColor(point.docIndex)}cc`;
+          const radius = point.isSelected ? 14 : point.isNeighbor ? 10 : 7;
+          return `
+            <g>
+              <circle
+                cx="${point.plotX}"
+                cy="${point.plotY}"
+                r="${radius}"
+                class="semantic-space-point ${point.isSelected ? "is-selected" : point.isNeighbor ? "is-neighbor" : ""}"
+                style="--space-point:${pointColor};"
+              >
+                <title>${escapeHtml(`${point.docName} · Chunk ${point.indexInDoc + 1}`)}</title>
+              </circle>
+            </g>
+          `;
+        })
+        .join("")}
+    </svg>
+  `;
+}
+
+function renderEmbeddingStageDisplay(selectedParagraph, detail, teachingData) {
+  if (!elements.embeddingStageDisplay) {
+    return;
+  }
+
+  if (!selectedParagraph) {
+    elements.embeddingStageDisplay.innerHTML = `
+      <div class="empty-message">Run the pipeline and select a paragraph from Embedding previews to inspect its embedding journey.</div>
+    `;
+    return;
+  }
+
+  const keyTokenChips = teachingData.tokens
+    .map((token, index) => ({
+      token,
+      score: teachingData.tokenImportance[index],
+    }))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 6)
+    .map(
+      (item) => `<span class="token-chip">${escapeHtml(item.token)}</span>`,
+    )
+    .join("");
+
+  const attentionCentrality = teachingData.attentionNodes
+    .map((node) => ({
+      token: node.token,
+      score: teachingData.attentionNodes.reduce((sum, candidate) => {
+        const influence = candidate.influences.find((item) => item.index === node.index);
+        return sum + (influence ? influence.weight : 0);
+      }, 0),
+    }))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 5)
+    .map(
+      (item) => `<span class="token-chip is-strong">${escapeHtml(item.token)}</span>`,
+    )
+    .join("");
+
+  let visualHtml = "";
+  let asideHtml = "";
+
+  switch (detail.key) {
+    case "tokenization":
+      visualHtml = buildTokenScatterSvg(
+        teachingData.tokenPoints.map((point) => ({
+          ...point,
+          importance: teachingData.tokenImportance[point.index],
+        })),
+        {
+          ariaLabel: "Tokenization projection",
+          pointColor: "var(--blue)",
+          titleBuilder: (point) => `Token ${point.index + 1}: ${point.token}`,
+        },
+      );
+      asideHtml = `
+        <div class="embedding-stage-note">
+          <p class="card-kicker">What you see</p>
+          <p>${escapeHtml(detail.text)}</p>
+        </div>
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Tokens in this paragraph</p>
+          <div class="token-chip-row">${teachingData.tokens.map((token) => `<span class="token-chip">${escapeHtml(token)}</span>`).join("")}</div>
+        </div>
+      `;
+      break;
+    case "transformer":
+      visualHtml = buildTokenScatterSvg(
+        teachingData.attentionNodes.map((node) => ({
+          ...node,
+          importance: teachingData.tokenImportance[node.index],
+        })),
+        {
+          projectionKey: "transformedProjection",
+          ariaLabel: "Self-attention projection",
+          pointColor: "var(--cyan)",
+          showAttentionLinks: true,
+          titleBuilder: (node) =>
+            `Token ${node.index + 1}: ${node.token}\nStrongest attention: ${node.influences
+              .map((influence) => `${influence.token} (${cosineToPercentage(influence.score)}%)`)
+              .join(", ")}`,
+        },
+      );
+      asideHtml = `
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Stage focus</p>
+          <p>${escapeHtml(detail.text)}</p>
+        </div>
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Hover behavior</p>
+          <p>Hover a token vector to reveal the strongest self-attention links that shaped it.</p>
+        </div>
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Most connected tokens</p>
+          <div class="token-chip-row">${attentionCentrality}</div>
+        </div>
+      `;
+      break;
+    case "pooling":
+      visualHtml = buildTokenScatterSvg(
+        teachingData.attentionNodes.map((node) => ({
+          ...node,
+          importance: teachingData.tokenImportance[node.index],
+        })),
+        {
+          projectionKey: "transformedProjection",
+          ariaLabel: "Pooling view",
+          pointColor: "var(--blue)",
+          centerPoint: {
+            projection: teachingData.pooledProjection,
+            label: "Pooled vector",
+          },
+          showPoolingLinks: true,
+          titleBuilder: (node) => `Token ${node.index + 1}: ${node.token}`,
+        },
+      );
+      asideHtml = `
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Pooled paragraph vector</p>
+          ${buildEmbeddingBarsMarkup(teachingData.pooledVector, "embedding-preview is-large")}
+        </div>
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Interpretation</p>
+          <p>${escapeHtml(detail.text)}</p>
+        </div>
+      `;
+      break;
+    case "contextual":
+      visualHtml = `
+        <div class="embedding-comparison-grid">
+          <article class="embedding-comparison-card">
+            <p class="card-kicker">Before context</p>
+            <h4>Pooled vector</h4>
+            ${buildEmbeddingBarsMarkup(teachingData.pooledVector, "embedding-preview is-large")}
+          </article>
+          <article class="embedding-comparison-card is-highlighted">
+            <p class="card-kicker">After context</p>
+            <h4>Context-shaped vector</h4>
+            ${buildEmbeddingBarsMarkup(teachingData.contextualVector, "embedding-preview is-large")}
+          </article>
+        </div>
+      `;
+      asideHtml = `
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Context-heavy tokens</p>
+          <div class="token-chip-row">${keyTokenChips}</div>
+        </div>
+        <div class="embedding-stage-note">
+          <p class="card-kicker">What changed</p>
+          <p>${escapeHtml(detail.text)}</p>
+        </div>
+      `;
+      break;
+    case "contrastive":
+      visualHtml = `
+        <div class="embedding-comparison-grid">
+          <article class="embedding-comparison-card">
+            <p class="card-kicker">Before contrastive learning</p>
+            <h4>Context-shaped vector</h4>
+            ${buildEmbeddingBarsMarkup(teachingData.contextualVector, "embedding-preview is-large")}
+          </article>
+          <article class="embedding-comparison-card is-highlighted">
+            <p class="card-kicker">After contrastive learning</p>
+            <h4>Sentence-aligned vector</h4>
+            ${buildEmbeddingBarsMarkup(teachingData.contrastiveVector, "embedding-preview is-large")}
+          </article>
+        </div>
+      `;
+      asideHtml = `
+        <div class="embedding-stage-note">
+          <p class="card-kicker">What changed</p>
+          <p>${escapeHtml(detail.text)}</p>
+        </div>
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Sentence influence</p>
+          ${buildSentenceInfluenceMarkup(teachingData.sentenceScores)}
+        </div>
+      `;
+      break;
+    case "semantic-space":
+      visualHtml = buildSemanticSpaceSvg(selectedParagraph, teachingData);
+      asideHtml = `
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Stage focus</p>
+          <p>${escapeHtml(detail.text)}</p>
+        </div>
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Final paragraph vector</p>
+          ${buildEmbeddingBarsMarkup(teachingData.finalVector, "embedding-preview is-large")}
+        </div>
+        <div class="embedding-stage-note">
+          <p class="card-kicker">Nearest neighbors</p>
+          <div class="neighbor-list">
+            ${teachingData.semanticNeighbors
+              .map(
+                (neighbor) => `
+                  <div class="neighbor-row">
+                    <span>${escapeHtml(`${neighbor.docName} · Chunk ${neighbor.indexInDoc + 1}`)}</span>
+                    <strong>${Math.round(clamp((neighbor.score + 1) * 50, 0, 100))}%</strong>
+                  </div>
+                `,
+              )
+              .join("")}
+          </div>
+        </div>
+      `;
+      break;
+    default:
+      visualHtml = `<div class="empty-message">Select a stage to inspect its transformation.</div>`;
+      asideHtml = "";
+  }
+
+  elements.embeddingStageDisplay.innerHTML = `
+    <div class="embedding-stage-shell">
+      <div class="embedding-stage-header">
+        <div>
+          <p class="card-kicker">Selected paragraph</p>
+          <h3>${escapeHtml(`${selectedParagraph.docName} · Chunk ${selectedParagraph.indexInDoc + 1}`)}</h3>
+        </div>
+        <span class="doc-stat">${selectedParagraph.charCount} chars</span>
+      </div>
+      <p class="topic-copy">${escapeHtml(summarizeText(selectedParagraph.text, 240))}</p>
+      <div class="embedding-stage-workspace">
+        <div class="embedding-stage-visual">${visualHtml}</div>
+        <aside class="embedding-stage-aside">${asideHtml}</aside>
+      </div>
+    </div>
+  `;
+}
+
+function renderEmbeddingExplorer() {
+  if (!elements.embeddingDetailsGrid || !elements.embeddingStageDisplay) {
+    return;
+  }
+
+  const embeddingDetails = documentationCopy.tabs.embeddings.details;
+  elements.embeddingDetailsGrid.innerHTML = embeddingDetails
+    .map(
+      (detail, index) => `
+        <button
+          type="button"
+          class="detail-card embedding-detail-card ${state.embeddingInspector.stageKey === detail.key ? "is-active" : ""}"
+          data-embedding-stage="${detail.key}"
+        >
+          <p class="card-kicker">Stage ${index + 1}</p>
+          <h3>${escapeHtml(detail.title)}</h3>
+          <p>${escapeHtml(detail.text)}</p>
+        </button>
+      `,
+    )
+    .join("");
+
+  elements.embeddingDetailsGrid.querySelectorAll("[data-embedding-stage]").forEach((button) => {
+    button.addEventListener("click", () => {
+      setEmbeddingInspectorStage(button.getAttribute("data-embedding-stage"));
+    });
+  });
+
+  const selectedParagraph = ensureSelectedEmbeddingParagraph();
+  const activeDetail =
+    embeddingDetails.find((detail) => detail.key === state.embeddingInspector.stageKey) || embeddingDetails[0];
+
+  if (!selectedParagraph) {
+    renderEmbeddingStageDisplay(null, activeDetail, null);
+    return;
+  }
+
+  renderEmbeddingStageDisplay(selectedParagraph, activeDetail, buildTeachingParagraphData(selectedParagraph));
+}
+
 function renderEmbeddingGrid() {
   if (!state.paragraphs.length) {
     elements.embeddingGrid.innerHTML = `<div class="empty-message">Run the pipeline to preview paragraph embeddings.</div>`;
+    renderEmbeddingExplorer();
     return;
   }
 
-  const cards = [];
-  const selectedParagraphs = state.retrieval ? state.retrieval.topResults : state.paragraphs.slice(0, 6);
-  const uniqueParagraphs = [];
-  const seen = new Set();
-  for (const paragraph of selectedParagraphs.concat(state.paragraphs.slice(0, 6))) {
-    if (!paragraph || seen.has(paragraph.id) || !hasEmbeddingVector(paragraph.embedding)) {
-      continue;
-    }
-    seen.add(paragraph.id);
-    uniqueParagraphs.push(paragraph);
-    if (uniqueParagraphs.length >= 6) {
-      break;
-    }
-  }
-
-  if (!uniqueParagraphs.length && !state.retrieval?.queryEmbedding) {
+  const previewParagraphs = buildEmbeddingPreviewParagraphs();
+  if (!previewParagraphs.length) {
     elements.embeddingGrid.innerHTML =
       `<div class="empty-message">Embeddings are being computed. Preview cards will appear as vectors become available.</div>`;
+    renderEmbeddingExplorer();
     return;
   }
 
-  uniqueParagraphs.forEach((paragraph) => {
-    const preview = buildEmbeddingPreview(paragraph.embedding);
-    cards.push(`
-      <article class="embedding-card ${paragraph.isRetrieved ? "is-highlighted" : ""}">
-        <div class="embedding-card-header">
-          <div>
-            <p class="card-kicker">Paragraph embedding</p>
-            <h3>${escapeHtml(paragraph.docName)}</h3>
+  const selectedParagraph = ensureSelectedEmbeddingParagraph();
+  elements.embeddingGrid.innerHTML = previewParagraphs
+    .map(
+      (paragraph) => `
+        <article
+          class="embedding-card ${paragraph.isRetrieved ? "is-highlighted" : ""} ${selectedParagraph?.id === paragraph.id ? "is-selected" : ""}"
+          data-embedding-paragraph="${paragraph.id}"
+          tabindex="0"
+          role="button"
+          aria-pressed="${selectedParagraph?.id === paragraph.id}"
+        >
+          <div class="embedding-card-header">
+            <div>
+              <p class="card-kicker">Paragraph embedding</p>
+              <h3>${escapeHtml(paragraph.docName)}</h3>
+            </div>
+            <span class="doc-stat">${paragraph.charCount} chars</span>
           </div>
-          <span class="doc-stat">${paragraph.charCount} chars</span>
-        </div>
-        <p>${escapeHtml(summarizeText(paragraph.text, 150))}</p>
-        <div class="embedding-preview">
-          ${preview
-            .map((value) => `<span class="embedding-bar" style="--level:${value}%;"></span>`)
-            .join("")}
-        </div>
-      </article>
-    `);
+          <p>${escapeHtml(summarizeText(paragraph.text, 150))}</p>
+          ${buildEmbeddingBarsMarkup(paragraph.embedding)}
+        </article>
+      `,
+    )
+    .join("");
+
+  elements.embeddingGrid.querySelectorAll("[data-embedding-paragraph]").forEach((card) => {
+    const paragraphId = card.getAttribute("data-embedding-paragraph");
+    card.addEventListener("click", () => {
+      setEmbeddingInspectorParagraph(paragraphId);
+    });
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        setEmbeddingInspectorParagraph(paragraphId);
+      }
+    });
   });
 
-  if (state.retrieval?.queryEmbedding) {
-    const queryPreview = buildEmbeddingPreview(state.retrieval.queryEmbedding);
-    cards.unshift(`
-      <article class="embedding-card is-highlighted">
-        <div class="embedding-card-header">
-          <div>
-            <p class="card-kicker">Query embedding</p>
-            <h3>${escapeHtml(state.retrieval.query)}</h3>
-          </div>
-          <span class="score-badge">Query</span>
-        </div>
-        <p>The question is encoded with the same model so its vector can be compared directly against every stored paragraph.</p>
-        <div class="embedding-preview">
-          ${queryPreview.map((value) => `<span class="embedding-bar" style="--level:${value}%;"></span>`).join("")}
-        </div>
-      </article>
-    `);
-  }
-
-  elements.embeddingGrid.innerHTML = cards.join("");
+  renderEmbeddingExplorer();
 }
 
 function renderSemanticMap() {
@@ -1722,6 +2511,7 @@ function resetAll() {
   state.pendingFiles = [];
   state.documents = [];
   state.paragraphs = [];
+  state.embeddingInspector.paragraphId = null;
   state.extractionReference = {
     type: "code",
     documentName: null,
@@ -1735,6 +2525,7 @@ function resetAll() {
   elements.fileInput.value = "";
   elements.queryInput.value = "";
   state.projectionAxes = null;
+  teachingParagraphCache.clear();
 
   setPipelineStatus("Waiting for documents");
   setStepState("extracting", "");
@@ -1758,6 +2549,7 @@ function addPendingEntries(entries, autoRun = false) {
   state.pendingFiles = entries;
   state.documents = [];
   state.paragraphs = [];
+  state.embeddingInspector.paragraphId = null;
   state.extractionReference = {
     type: "code",
     documentName: null,
@@ -1768,6 +2560,7 @@ function addPendingEntries(entries, autoRun = false) {
   };
   state.retrieval = null;
   state.projectionAxes = null;
+  teachingParagraphCache.clear();
   markPipelineDirty("Documents loaded. Run the pipeline to rebuild the RAG index.");
   renderExtractionGrid();
   renderParagraphBoard();
