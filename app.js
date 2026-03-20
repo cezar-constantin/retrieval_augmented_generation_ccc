@@ -341,7 +341,7 @@ function setupSuggestions() {
 function updateEncoderStatus() {
   let label = state.embeddingEngine.label;
   if (state.embeddingEngine.progress) {
-    label = `${label} • ${state.embeddingEngine.progress}`;
+    label = `${label} - ${state.embeddingEngine.progress}`;
   }
   elements.encoderStatus.textContent = label;
 }
@@ -473,6 +473,10 @@ function renderParagraphBoard() {
 }
 
 function buildEmbeddingPreview(vector) {
+  if (!Array.isArray(vector) || !vector.length) {
+    return new Array(PREVIEW_EMBED_DIMENSIONS).fill(0);
+  }
+
   const sliceSize = Math.max(1, Math.floor(vector.length / PREVIEW_EMBED_DIMENSIONS));
   const preview = [];
 
@@ -492,6 +496,10 @@ function buildEmbeddingPreview(vector) {
   return preview.map((value) => Math.round((value / maxValue) * 100));
 }
 
+function hasEmbeddingVector(value) {
+  return Array.isArray(value) && value.length > 0;
+}
+
 function renderEmbeddingGrid() {
   if (!state.paragraphs.length) {
     elements.embeddingGrid.innerHTML = `<div class="empty-message">Run the pipeline to preview paragraph embeddings.</div>`;
@@ -503,7 +511,7 @@ function renderEmbeddingGrid() {
   const uniqueParagraphs = [];
   const seen = new Set();
   for (const paragraph of selectedParagraphs.concat(state.paragraphs.slice(0, 6))) {
-    if (!paragraph || seen.has(paragraph.id)) {
+    if (!paragraph || seen.has(paragraph.id) || !hasEmbeddingVector(paragraph.embedding)) {
       continue;
     }
     seen.add(paragraph.id);
@@ -511,6 +519,12 @@ function renderEmbeddingGrid() {
     if (uniqueParagraphs.length >= 6) {
       break;
     }
+  }
+
+  if (!uniqueParagraphs.length && !state.retrieval?.queryEmbedding) {
+    elements.embeddingGrid.innerHTML =
+      `<div class="empty-message">Embeddings are being computed. Preview cards will appear as vectors become available.</div>`;
+    return;
   }
 
   uniqueParagraphs.forEach((paragraph) => {
@@ -562,10 +576,18 @@ function renderSemanticMap() {
     return;
   }
 
-  const points = state.paragraphs.map((paragraph) => ({
-    ...paragraph,
-    projection: projectVector(paragraph.embedding),
-  }));
+  const points = state.paragraphs
+    .filter((paragraph) => hasEmbeddingVector(paragraph.embedding))
+    .map((paragraph) => ({
+      ...paragraph,
+      projection: projectVector(paragraph.embedding),
+    }));
+
+  if (!points.length) {
+    elements.semanticMap.innerHTML =
+      `<div class="semantic-map-empty">Embeddings are being computed. The semantic map will appear once vectors are ready.</div>`;
+    return;
+  }
 
   if (state.retrieval?.queryEmbedding) {
     points.push({
@@ -840,12 +862,12 @@ async function ensureEmbeddingEngine() {
   }
 
   state.embeddingEngine.mode = "loading";
-  state.embeddingEngine.label = "Loading all-MiniLM-L6-v2";
+  state.embeddingEngine.label = "Loading browser embedding model";
   state.embeddingEngine.progress = "";
   updateHeroMetrics();
 
   try {
-    const { pipeline, env } = await import("https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2");
+    const { pipeline, env } = await import("https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.0");
     env.allowLocalModels = false;
     env.useBrowserCache = true;
     if (env.backends?.onnx?.wasm) {
