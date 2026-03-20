@@ -15,10 +15,10 @@ export const documentationCopy = {
         "This view connects every stage in one place. Students can upload documents, trigger the pipeline, inspect the retrieved evidence, and compare the final answer with the underlying paragraphs.",
     },
     extracting: {
-      kicker: "5. Extracting text from Documents",
+      kicker: "",
       title: "Extracting text from Documents",
       copy:
-        "The source code checks the file extension, then uses a dedicated extraction path for each supported format. In the original Python version, DOCX files are read with the docx module and PDF files are read page by page with fitz (PyMuPDF).",
+        "This part of the pipeline checks the file extension, then uses a dedicated extraction path for each supported format. Whether DOCX, PDF, TXT, or Markdown, the code turns each uploaded file into plain text that the retrieval system can search.",
       bullets: [
         "Purpose: turn each uploaded file into plain text that the retrieval system can search.",
         "DOCX path: read document paragraphs and keep the non-empty ones.",

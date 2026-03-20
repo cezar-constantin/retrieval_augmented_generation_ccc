@@ -489,6 +489,13 @@ input[type="range"] {
   margin-bottom: 10px;
 }
 
+.answer-state {
+  margin: 0 0 10px;
+  font-family: "Fraunces", serif;
+  font-size: 1.08rem;
+  color: var(--blue-deep);
+}
+
 .answer-card p {
   margin: 0;
 }

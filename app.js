@@ -251,7 +251,9 @@ function renderDocumentationContent() {
   }
 
   const extraction = tabs.extracting;
-  document.getElementById("extracting-kicker").textContent = extraction.kicker;
+  const extractingKicker = document.getElementById("extracting-kicker");
+  extractingKicker.textContent = extraction.kicker;
+  extractingKicker.hidden = !extraction.kicker;
   document.getElementById("extracting-title").textContent = extraction.title;
   document.getElementById("extracting-copy").textContent = extraction.copy;
   renderBulletList(document.getElementById("extracting-bullets"), extraction.bullets);
