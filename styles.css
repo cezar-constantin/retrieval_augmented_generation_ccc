@@ -38,6 +38,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   font-family: "IBM Plex Sans", sans-serif;
   color: var(--ink);
   background:
@@ -1413,7 +1414,7 @@ input[type="range"] {
 
 @media (max-width: 860px) {
   .page-shell {
-    width: min(100vw - 20px, 100%);
+    width: min(100vw - 16px, 100%);
     margin: 12px auto 36px;
     gap: 16px;
   }
@@ -1455,12 +1456,21 @@ input[type="range"] {
   }
 
   .tab-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
   }
 
   .tab-button {
-    width: 100%;
+    width: auto;
+    flex: 0 0 auto;
+    min-width: max-content;
+    padding-inline: 16px;
+    scroll-snap-align: start;
   }
 
   .section-heading {
@@ -1489,6 +1499,55 @@ input[type="range"] {
     width: 100%;
   }
 
+  .query-input,
+  .code-block {
+    font-size: 0.9rem;
+  }
+
+  .query-input {
+    min-height: 104px;
+    padding: 14px 16px;
+  }
+
+  .code-block {
+    padding: 16px;
+  }
+
+  .reference-output {
+    max-height: 420px;
+  }
+
+  .raw-split-header,
+  .document-card-header,
+  .paragraph-card-header,
+  .retrieval-card-header,
+  .embedding-card-header,
+  .sentence-influence-header,
+  .embedding-stage-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ranking-row {
+    grid-template-columns: 1fr;
+  }
+
+  .retrieval-chart-panel,
+  .embedding-stage-display {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .embedding-stage-visual {
+    min-height: 340px;
+    padding: 10px;
+  }
+
+  .embedding-preview,
+  .embedding-preview.is-large {
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+  }
+
   .detail-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1508,13 +1567,43 @@ input[type="range"] {
   .observatory-panel,
   .topic-card,
   .live-card {
-    padding: 18px;
+    padding: 16px;
   }
 
-  .tab-list,
   .button-row,
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .tab-list {
+    gap: 8px;
+    padding-bottom: 2px;
+  }
+
+  .tab-button {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 0.92rem;
+  }
+
+  .eyebrow,
+  .section-kicker,
+  .card-kicker,
+  .metric-label {
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+  }
+
+  .hero-text,
+  .helper-copy,
+  .topic-copy,
+  .answer-copy,
+  .visual-copy,
+  .step-copy,
+  .note-card p:last-child,
+  .query-card p,
+  .empty-message {
+    line-height: 1.55;
   }
 
   .hero-flow,
@@ -1523,7 +1612,63 @@ input[type="range"] {
     gap: 8px;
   }
 
+  .flow-chip,
+  .source-tag,
+  .doc-stat,
+  .legend-tag {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+
+  .button-row {
+    gap: 10px;
+  }
+
+  .query-input,
+  .code-block {
+    font-size: 0.86rem;
+  }
+
+  .query-input {
+    min-height: 96px;
+  }
+
+  .reference-output {
+    max-height: 360px;
+  }
+
+  .semantic-map-shell,
+  .retrieval-chart-panel {
+    padding: 12px;
+    border-radius: 20px;
+  }
+
   .semantic-map {
     min-height: 280px;
+  }
+
+  .embedding-stage-display {
+    padding: 14px;
+  }
+
+  .embedding-stage-visual {
+    min-height: 280px;
+    padding: 8px;
+  }
+
+  .embedding-preview,
+  .embedding-preview.is-large {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .embedding-bar,
+  .embedding-preview.is-large .embedding-bar {
+    height: 42px;
+  }
+
+  .retrieval-chart-cosine,
+  .retrieval-origin-label,
+  .retrieval-query-label {
+    font-size: 0.72rem;
   }
 }

@@ -110,15 +110,7 @@ paragraph_embeddings = model.encode(paragraphs, convert_to_tensor=True)`,
     query_embedding = model.encode(query, convert_to_tensor=True)
     scores = util.pytorch_cos_sim(query_embedding, paragraph_embeddings)[0]
     top_results = scores.argsort(descending=True)[:top_k]
-
-    results = []
-    for idx in top_results:
-        results.append({
-            "source": meta_data[idx],
-            "paragraph": paragraphs[idx],
-            "score": scores[idx].item()
-        })
-    return results`,
+    return top_results`,
     },
   },
 };
