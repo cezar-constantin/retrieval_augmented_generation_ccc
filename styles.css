@@ -556,16 +556,6 @@ input[type="range"] {
   margin-bottom: 20px;
 }
 
-.contact-highlight {
-  display: inline-flex;
-  align-items: center;
-  padding: 6px 10px;
-  background: linear-gradient(135deg, rgba(98, 136, 227, 0.92), rgba(56, 102, 209, 0.92));
-  color: #ffffff;
-  font-weight: 700;
-  line-height: 1.4;
-}
-
 .contact-form {
   display: grid;
   gap: 16px;
@@ -1763,8 +1753,7 @@ input[type="range"] {
     align-items: flex-start;
   }
 
-  .panel-chip,
-  .contact-highlight {
+  .panel-chip {
     white-space: normal;
   }
 
