@@ -381,86 +381,101 @@
       </section>
 
       <section class="card contact-panel" id="contact-panel" aria-labelledby="contact-title">
-        <div class="contact-layout">
+        <div class="contact-header">
           <div class="contact-copy">
-            <div>
-              <p class="section-kicker">Contact</p>
-              <h2 id="contact-title">Ask a question directly from the simulator</h2>
+            <p class="section-kicker">Contact</p>
+            <h2 id="contact-title">Ask a question directly from the simulator</h2>
+          </div>
+          <span class="panel-chip">In-platform contact form</span>
+        </div>
+
+        <div class="contact-meta">
+          <p class="helper-copy">
+            For more information, visit
+            <a href="https://helvetic-ai-compass.ch/" target="_blank" rel="noreferrer">https://helvetic-ai-compass.ch/</a>.
+          </p>
+          <div class="contact-highlight">Direct contact address: cezar.chirila@helvetic-ai-compass.ch.</div>
+        </div>
+
+        <form
+          id="contact-form"
+          class="contact-form"
+          action="https://formsubmit.co/cezar.chirila@helvetic-ai-compass.ch"
+          method="POST"
+        >
+          <input type="hidden" name="_subject" value="RAG simulator inquiry" />
+          <input type="hidden" name="_template" value="table" />
+          <input type="hidden" name="_url" id="contact-form-url" value="" />
+
+          <div class="contact-grid">
+            <div class="contact-field">
+              <label for="contact-name">Full name</label>
+              <input id="contact-name" type="text" name="name" autocomplete="name" required />
             </div>
-            <p class="helper-copy">
-              For more information, visit
-              <a href="https://helvetic-ai-compass.ch/" target="_blank" rel="noreferrer">https://helvetic-ai-compass.ch/</a>.
-            </p>
+
+            <div class="contact-field">
+              <label for="contact-company">Company</label>
+              <input id="contact-company" type="text" name="company" autocomplete="organization" />
+            </div>
+
+            <div class="contact-field">
+              <label for="contact-email">Email address</label>
+              <input id="contact-email" type="email" name="email" autocomplete="email" required />
+            </div>
+
+            <div class="contact-field">
+              <label for="contact-topic">Question topic</label>
+              <input
+                id="contact-topic"
+                type="text"
+                name="topic"
+                placeholder="Teaching use case, simulator support, methodology..."
+              />
+            </div>
+
+            <div class="contact-field contact-field-full">
+              <label for="contact-question">Question</label>
+              <textarea
+                id="contact-question"
+                name="question"
+                rows="6"
+                placeholder="Write your question, context, or teaching use case here."
+                required
+              ></textarea>
+            </div>
           </div>
 
-          <form
-            id="contact-form"
-            class="contact-form"
-            action="https://formsubmit.co/cezar.chirila@helvetic-ai-compass.ch"
-            method="POST"
-          >
-            <input type="hidden" name="_subject" value="RAG simulator inquiry" />
-            <input type="hidden" name="_template" value="table" />
-            <input type="hidden" name="_url" id="contact-form-url" value="" />
-
-            <div class="contact-grid">
-              <div class="contact-field">
-                <label for="contact-name">Full name</label>
-                <input id="contact-name" type="text" name="name" autocomplete="name" required />
-              </div>
-
-              <div class="contact-field">
-                <label for="contact-company">Company</label>
-                <input id="contact-company" type="text" name="company" autocomplete="organization" />
-              </div>
-
-              <div class="contact-field">
-                <label for="contact-email">Email address</label>
-                <input id="contact-email" type="email" name="email" autocomplete="email" required />
-              </div>
-
-              <div class="contact-field contact-field-full">
-                <label for="contact-question">Question</label>
-                <textarea
-                  id="contact-question"
-                  name="question"
-                  rows="6"
-                  placeholder="Write your question, context, or teaching use case here."
-                  required
-                ></textarea>
-              </div>
-            </div>
-
-            <div class="contact-actions">
-              <button class="primary-button" id="contact-submit-button" type="submit">Send question</button>
-              <p class="contact-status" id="contact-status" aria-live="polite"></p>
-            </div>
-          </form>
-        </div>
+          <div class="contact-actions">
+            <button class="primary-button" id="contact-submit-button" type="submit">Send question</button>
+            <p class="contact-status" id="contact-status" aria-live="polite"></p>
+          </div>
+        </form>
       </section>
 
       <section class="card disclaimer-panel" aria-labelledby="disclaimer-title">
-        <div class="disclaimer-layout">
+        <div class="disclaimer-header">
           <div>
             <p class="section-kicker">Disclaimer</p>
-            <h2 id="disclaimer-title">Educational Use Only</h2>
+            <h2 id="disclaimer-title">Educational use only</h2>
           </div>
-          <div class="disclaimer-copy">
-            <p>
-              This simulator and all related content are provided solely for educational, informational, demonstration,
-              and evaluation purposes.
-            </p>
-            <p>
-              They are not intended for production use and must not be used, relied upon, or incorporated into any
-              commercial activity, client deliverable, operational workflow, regulatory submission, or business
-              decision-making process.
-            </p>
-            <p>
-              The materials are provided on an &quot;as is&quot; basis, without warranties of any kind, express or implied,
-              including accuracy, completeness, fitness for a particular purpose, or non-infringement. Use of this
-              simulator is at the user&apos;s own risk.
-            </p>
-          </div>
+          <span class="panel-chip panel-chip-subtle">Non-commercial material</span>
+        </div>
+        <div class="disclaimer-copy">
+          <p>
+            The materials, models, code, methodologies, outputs, and visualizations made available through this
+            simulator are provided solely for educational, training, and illustrative purposes.
+          </p>
+          <p>
+            They do not constitute legal, regulatory, accounting, audit, tax, investment, model risk management,
+            credit risk, or any other professional advice, and they must not be relied upon for production,
+            commercial, client-facing, regulatory, or other business-critical use cases.
+          </p>
+          <p>
+            No representation or warranty, express or implied, is made as to the accuracy, completeness, fitness for
+            purpose, or regulatory suitability of the content. Any commercial exploitation or operational deployment is
+            strictly prohibited unless independently validated and reviewed by appropriately qualified professionals
+            under the relevant governance framework.
+          </p>
         </div>
       </section>
     </div>
