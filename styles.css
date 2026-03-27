@@ -446,8 +446,9 @@ svg {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+  flex-wrap: nowrap;
   width: 100%;
-  overflow-x: auto;
+  min-width: 0;
 }
 
 .tabs-ribbon {
@@ -455,7 +456,8 @@ svg {
 }
 
 .section-intro h2 {
-  font-size: clamp(2rem, 4vw, 3.15rem);
+  width: 100%;
+  font-size: clamp(1rem, 4vw, 3.15rem);
   max-width: none;
   white-space: nowrap;
 }

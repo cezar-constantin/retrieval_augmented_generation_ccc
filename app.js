@@ -89,6 +89,7 @@ const elements = {
   heroEyebrow: document.getElementById("hero-eyebrow"),
   heroTitle: document.getElementById("hero-title"),
   heroText: document.getElementById("hero-text"),
+  sectionIntroTitle: document.getElementById("section-intro-title"),
   encoderStatus: document.getElementById("encoder-status"),
   documentCount: document.getElementById("document-count"),
   paragraphCount: document.getElementById("paragraph-count"),
@@ -184,6 +185,29 @@ function sampleEvenly(items, limit) {
   }
 
   return sampled;
+}
+
+function fitIntroTitleToSingleLine() {
+  const title = elements.sectionIntroTitle;
+  if (!title || typeof window === "undefined") {
+    return;
+  }
+
+  title.style.fontSize = "";
+
+  const parentWidth = title.parentElement?.clientWidth || title.clientWidth;
+  const contentWidth = title.scrollWidth;
+  if (!parentWidth || !contentWidth || contentWidth <= parentWidth) {
+    return;
+  }
+
+  const currentFontSize = Number.parseFloat(window.getComputedStyle(title).fontSize);
+  if (!Number.isFinite(currentFontSize) || currentFontSize <= 0) {
+    return;
+  }
+
+  const fittedFontSize = Math.max(8, (currentFontSize * parentWidth) / contentWidth);
+  title.style.fontSize = `${fittedFontSize}px`;
 }
 
 function summarizeText(text, maxLength = 220) {
@@ -2958,7 +2982,10 @@ function attachEvents() {
   });
   window.addEventListener("resize", () => {
     window.clearTimeout(responsiveRefreshTimer);
-    responsiveRefreshTimer = window.setTimeout(refreshViewportMode, 120);
+    responsiveRefreshTimer = window.setTimeout(() => {
+      refreshViewportMode();
+      fitIntroTitleToSingleLine();
+    }, 120);
   });
 
   elements.contactForm?.addEventListener("submit", (event) => {
@@ -2977,6 +3004,10 @@ function initialize() {
   }
   setContactStatus("", "idle");
   resetAll();
+  fitIntroTitleToSingleLine();
+  document.fonts?.ready?.then(() => {
+    fitIntroTitleToSingleLine();
+  });
 }
 
 initialize();
