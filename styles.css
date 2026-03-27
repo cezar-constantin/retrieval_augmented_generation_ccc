@@ -442,12 +442,23 @@ svg {
   animation: fade-up 720ms 120ms both;
 }
 
+.section-intro-header-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+
+.section-intro-header-row .section-kicker {
+  flex: 0 0 auto;
+}
+
 .section-intro-title-row {
   display: flex;
   justify-content: flex-start;
   align-items: center;
   flex-wrap: nowrap;
-  width: 100%;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -1674,6 +1685,10 @@ input[type="range"] {
 
   .section-intro h2 {
     max-width: none;
+  }
+
+  .section-intro-header-row {
+    gap: 12px;
   }
 
   .hero,

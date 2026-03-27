@@ -195,7 +195,7 @@ function fitIntroTitleToSingleLine() {
 
   title.style.fontSize = "";
 
-  const parentWidth = title.parentElement?.clientWidth || title.clientWidth;
+  const parentWidth = title.clientWidth || title.parentElement?.clientWidth || 0;
   const contentWidth = title.scrollWidth;
   if (!parentWidth || !contentWidth || contentWidth <= parentWidth) {
     return;
