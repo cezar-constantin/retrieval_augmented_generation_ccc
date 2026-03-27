@@ -325,8 +325,9 @@ svg {
 
 .hero h1 {
   width: 100%;
-  max-width: 12ch;
-  font-size: clamp(3rem, 7vw, 5.4rem);
+  max-width: none;
+  font-size: clamp(1.05rem, 4.65vw, 5.4rem);
+  white-space: nowrap;
 }
 
 .hero-text,
@@ -1584,8 +1585,8 @@ input[type="range"] {
   }
 
   .hero h1 {
-    max-width: 100%;
-    font-size: clamp(2.5rem, 12vw, 3.6rem);
+    max-width: none;
+    font-size: clamp(1rem, 4.8vw, 2.4rem);
   }
 
   .section-intro h2 {
