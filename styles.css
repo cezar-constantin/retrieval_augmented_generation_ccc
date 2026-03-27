@@ -442,13 +442,22 @@ svg {
   animation: fade-up 720ms 120ms both;
 }
 
+.section-intro-title-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  overflow-x: auto;
+}
+
 .tabs-ribbon {
   animation: fade-up 720ms 160ms both;
 }
 
 .section-intro h2 {
   font-size: clamp(2rem, 4vw, 3.15rem);
-  max-width: 20ch;
+  max-width: none;
+  white-space: nowrap;
 }
 
 .tabs {
