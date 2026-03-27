@@ -152,15 +152,17 @@ svg {
 .brand-copy span {
   font-size: 0.75rem;
   color: var(--muted);
-  white-space: nowrap;
+  max-width: 36ch;
+  white-space: normal;
 }
 
-.top-nav,
-.header-actions {
+.top-nav {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  flex: 1 1 auto;
+  justify-content: flex-end;
 }
 
 .nav-link,
@@ -224,6 +226,11 @@ svg {
   border-color: rgba(34, 211, 238, 0.2);
 }
 
+.top-nav .tab-button {
+  min-height: 40px;
+  padding-inline: 14px;
+}
+
 .card {
   position: relative;
   overflow: hidden;
@@ -254,7 +261,7 @@ svg {
 
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.92fr);
+  grid-template-columns: 1fr;
   gap: 28px;
   padding: 42px;
   background:
@@ -279,32 +286,6 @@ svg {
 
 .hero-copy {
   align-content: start;
-}
-
-.hero-side {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 214px;
-  gap: 16px;
-  align-items: stretch;
-}
-
-.hero-qr-card {
-  display: grid;
-  place-items: center;
-  padding: 16px;
-  border-radius: 24px;
-  border: 1px solid rgba(34, 211, 238, 0.14);
-  background:
-    radial-gradient(circle at top left, rgba(34, 211, 238, 0.14), transparent 34%),
-    linear-gradient(180deg, rgba(59, 130, 246, 0.16), rgba(11, 15, 26, 0.88));
-}
-
-.hero-qr-image {
-  width: 100%;
-  max-width: 176px;
-  aspect-ratio: 1 / 1;
-  object-fit: contain;
-  border-radius: 18px;
 }
 
 .eyebrow,
@@ -1441,10 +1422,6 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 
-  .hero-side {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .observatory-grid > .answer-card {
     grid-column: auto;
   }
@@ -1503,15 +1480,23 @@ input[type="range"] {
     white-space: normal;
   }
 
-  .header-actions,
-  .top-nav,
-  .hero-side {
+  .top-nav {
     width: 100%;
   }
 
-  .header-actions .header-chip,
-  .top-nav .nav-link {
-    flex: 1 1 auto;
+  .top-nav {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .top-nav .tab-button {
+    flex: 0 0 auto;
+    min-width: max-content;
+    scroll-snap-align: start;
   }
 
   .hero,
@@ -1525,10 +1510,6 @@ input[type="range"] {
   }
 
   .hero {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-side {
     grid-template-columns: 1fr;
   }
 

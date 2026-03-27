@@ -1025,6 +1025,10 @@ function setupSuggestions() {
 }
 
 function updateEncoderStatus() {
+  if (!elements.encoderStatus) {
+    return;
+  }
+
   let label = state.embeddingEngine.label;
   if (state.embeddingEngine.progress) {
     label = `${label} - ${state.embeddingEngine.progress}`;
@@ -1033,14 +1037,20 @@ function updateEncoderStatus() {
 }
 
 function updateHeroMetrics() {
-  if (state.documents.length) {
-    elements.documentCount.textContent = `${state.documents.length} loaded`;
-  } else if (state.pendingFiles.length) {
-    elements.documentCount.textContent = `${state.pendingFiles.length} selected`;
-  } else {
-    elements.documentCount.textContent = "0 loaded";
+  if (elements.documentCount) {
+    if (state.documents.length) {
+      elements.documentCount.textContent = `${state.documents.length} loaded`;
+    } else if (state.pendingFiles.length) {
+      elements.documentCount.textContent = `${state.pendingFiles.length} selected`;
+    } else {
+      elements.documentCount.textContent = "0 loaded";
+    }
   }
-  elements.paragraphCount.textContent = `${state.paragraphs.length} indexed`;
+
+  if (elements.paragraphCount) {
+    elements.paragraphCount.textContent = `${state.paragraphs.length} indexed`;
+  }
+
   elements.topKValue.textContent = String(state.topK);
   elements.minLengthValue.textContent = `${state.minParagraphLength} chars`;
   if (elements.splittingSummaryPill) {

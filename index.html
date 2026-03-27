@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CCC Retrieval Augmented Generation | Cezar Constantin</title>
+    <title>Retrieval Augmented Generation | Cezar Constantin</title>
     <meta
       name="description"
       content="Portfolio-styled RAG teaching simulator with document upload, chunking, embeddings, retrieval, and grounded answer generation."
@@ -37,34 +37,67 @@
         >
           <img class="brand-logo" src="./assets/logo_dark_background.svg" alt="Cezar Constantin logo" />
           <span class="brand-copy">
-            <strong>CCC RAG</strong>
-            <span>Portfolio-styled retrieval simulator</span>
+            <strong>Retrieval Augmented Generation</strong>
+            <span>Interactive browser-based simulator for teaching the full RAG pipeline</span>
           </span>
         </a>
 
-        <nav class="top-nav" aria-label="Section navigation">
-          <a class="nav-link" href="#simulator-section">Simulator</a>
-          <a class="nav-link" href="#pipeline-section">Pipeline views</a>
-          <a class="nav-link" href="#contact-section">Contact</a>
-        </nav>
-
-        <div class="header-actions">
-          <a
-            class="header-chip"
-            href="https://www.cezar-constantin-chirila.com/portfolio/"
-            target="_blank"
-            rel="noreferrer"
+        <div class="top-nav" role="tablist" aria-label="Simulator sections">
+          <button
+            class="tab-button is-active"
+            id="tab-button-simulator"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="tab-panel-simulator"
+            data-tab-target="simulator"
           >
-            AI Portfolio
-          </a>
-          <a
-            class="header-chip is-strong"
-            href="https://github.com/cezar-constantin/retrieval_augmented_generation_ccc"
-            target="_blank"
-            rel="noreferrer"
+            Simulator
+          </button>
+          <button
+            class="tab-button"
+            id="tab-button-extracting"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="tab-panel-extracting"
+            data-tab-target="extracting"
           >
-            GitHub repo
-          </a>
+            Extracting Text
+          </button>
+          <button
+            class="tab-button"
+            id="tab-button-splitting"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="tab-panel-splitting"
+            data-tab-target="splitting"
+          >
+            Split Paragraphs
+          </button>
+          <button
+            class="tab-button"
+            id="tab-button-embeddings"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="tab-panel-embeddings"
+            data-tab-target="embeddings"
+          >
+            Embeddings
+          </button>
+          <button
+            class="tab-button"
+            id="tab-button-retrieval"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="tab-panel-retrieval"
+            data-tab-target="retrieval"
+          >
+            Retrieval Function
+          </button>
         </div>
       </header>
 
@@ -76,35 +109,6 @@
             Upload documents, compute embeddings, retrieve the most relevant passages, and explain the entire RAG
             pipeline visually.
           </p>
-
-          <div class="hero-flow" aria-label="Core simulator stages">
-            <span class="flow-chip">Document upload</span>
-            <span class="flow-chip">Paragraph chunking</span>
-            <span class="flow-chip">Embedding previews</span>
-            <span class="flow-chip">Similarity ranking</span>
-            <span class="flow-chip">Grounded answers</span>
-          </div>
-        </div>
-
-        <div class="hero-side">
-          <div class="hero-badges">
-            <article class="metric-chip">
-              <span class="metric-label">Encoder</span>
-              <strong id="encoder-status">Waiting to load</strong>
-            </article>
-            <article class="metric-chip">
-              <span class="metric-label">Documents</span>
-              <strong id="document-count">0 loaded</strong>
-            </article>
-            <article class="metric-chip">
-              <span class="metric-label">Paragraphs</span>
-              <strong id="paragraph-count">0 indexed</strong>
-            </article>
-          </div>
-
-          <aside class="hero-qr-card" aria-label="QR code for the live simulator">
-            <img class="hero-qr-image" src="./assets/hero-qr.png" alt="QR code linking to the live RAG simulator" />
-          </aside>
         </div>
       </section>
 
@@ -116,66 +120,6 @@
             Choose documents, run chunking and embeddings, compare ranked passages, and move through the teaching tabs
             to understand each stage of the pipeline in a single portfolio-style experience.
           </p>
-        </section>
-
-        <section class="tabs card" id="pipeline-section" aria-label="Content tabs">
-          <div class="tab-list" role="tablist">
-            <button
-              class="tab-button is-active"
-              id="tab-button-simulator"
-              type="button"
-              role="tab"
-              aria-selected="true"
-              aria-controls="tab-panel-simulator"
-              data-tab-target="simulator"
-            >
-              Simulator
-            </button>
-            <button
-              class="tab-button"
-              id="tab-button-extracting"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="tab-panel-extracting"
-              data-tab-target="extracting"
-            >
-              Extracting Text
-            </button>
-            <button
-              class="tab-button"
-              id="tab-button-splitting"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="tab-panel-splitting"
-              data-tab-target="splitting"
-            >
-              Split Paragraphs
-            </button>
-            <button
-              class="tab-button"
-              id="tab-button-embeddings"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="tab-panel-embeddings"
-              data-tab-target="embeddings"
-            >
-              Embeddings
-            </button>
-            <button
-              class="tab-button"
-              id="tab-button-retrieval"
-              type="button"
-              role="tab"
-              aria-selected="false"
-              aria-controls="tab-panel-retrieval"
-              data-tab-target="retrieval"
-            >
-              Retrieval Function
-            </button>
-          </div>
         </section>
 
         <section
