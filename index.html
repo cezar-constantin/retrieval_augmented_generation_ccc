@@ -3,11 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Retrieval Augmented Generation</title>
+    <title>CCC Retrieval Augmented Generation | Cezar Constantin</title>
     <meta
       name="description"
-      content="Interactive RAG teaching simulator with document upload, paragraph chunking, embeddings, retrieval ranking, and grounded answer generation."
+      content="Portfolio-styled RAG teaching simulator with document upload, chunking, embeddings, retrieval, and grounded answer generation."
     />
+    <meta name="theme-color" content="#0B0F1A" />
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-5NWC8CSNMW"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -20,22 +21,71 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <div class="page-shell">
-      <header class="hero card">
-        <div class="hero-copy">
-          <p class="eyebrow" id="hero-eyebrow">Interactive teaching simulator</p>
+      <header class="site-header" aria-label="Site navigation">
+        <a
+          class="brand-mark"
+          href="https://www.cezar-constantin-chirila.com/portfolio/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <img class="brand-logo" src="./assets/logo_dark_background.svg" alt="Cezar Constantin logo" />
+          <span class="brand-copy">
+            <strong>CCC RAG</strong>
+            <span>Portfolio-styled retrieval simulator</span>
+          </span>
+        </a>
+
+        <nav class="top-nav" aria-label="Section navigation">
+          <a class="nav-link" href="#simulator-section">Simulator</a>
+          <a class="nav-link" href="#pipeline-section">Pipeline views</a>
+          <a class="nav-link" href="#contact-section">Contact</a>
+        </nav>
+
+        <div class="header-actions">
+          <a
+            class="header-chip"
+            href="https://www.cezar-constantin-chirila.com/portfolio/"
+            target="_blank"
+            rel="noreferrer"
+          >
+            AI Portfolio
+          </a>
+          <a
+            class="header-chip is-strong"
+            href="https://github.com/cezar-constantin/retrieval_augmented_generation_ccc"
+            target="_blank"
+            rel="noreferrer"
+          >
+            GitHub repo
+          </a>
+        </div>
+      </header>
+
+      <section class="hero card" aria-labelledby="hero-title">
+        <div class="hero-copy hero-main">
+          <p class="eyebrow" id="hero-eyebrow">Portfolio-styled teaching simulator</p>
           <h1 id="hero-title">Retrieval Augmented Generation</h1>
           <p class="hero-text" id="hero-text">
             Upload documents, compute embeddings, retrieve the most relevant passages, and explain the entire RAG
             pipeline visually.
           </p>
+
+          <div class="hero-flow" aria-label="Core simulator stages">
+            <span class="flow-chip">Document upload</span>
+            <span class="flow-chip">Paragraph chunking</span>
+            <span class="flow-chip">Embedding previews</span>
+            <span class="flow-chip">Similarity ranking</span>
+            <span class="flow-chip">Grounded answers</span>
+          </div>
         </div>
+
         <div class="hero-side">
           <div class="hero-badges">
             <article class="metric-chip">
@@ -51,431 +101,458 @@
               <strong id="paragraph-count">0 indexed</strong>
             </article>
           </div>
+
           <aside class="hero-qr-card" aria-label="QR code for the live simulator">
             <img class="hero-qr-image" src="./assets/hero-qr.png" alt="QR code linking to the live RAG simulator" />
           </aside>
         </div>
-      </header>
-
-      <section class="tabs card" aria-label="Content tabs">
-        <div class="tab-list" role="tablist">
-          <button
-            class="tab-button is-active"
-            id="tab-button-simulator"
-            type="button"
-            role="tab"
-            aria-selected="true"
-            aria-controls="tab-panel-simulator"
-            data-tab-target="simulator"
-          >
-            Simulator
-          </button>
-          <button
-            class="tab-button"
-            id="tab-button-extracting"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="tab-panel-extracting"
-            data-tab-target="extracting"
-          >
-            Extracting Text
-          </button>
-          <button
-            class="tab-button"
-            id="tab-button-splitting"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="tab-panel-splitting"
-            data-tab-target="splitting"
-          >
-            Split Paragraphs
-          </button>
-          <button
-            class="tab-button"
-            id="tab-button-embeddings"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="tab-panel-embeddings"
-            data-tab-target="embeddings"
-          >
-            Embeddings
-          </button>
-          <button
-            class="tab-button"
-            id="tab-button-retrieval"
-            type="button"
-            role="tab"
-            aria-selected="false"
-            aria-controls="tab-panel-retrieval"
-            data-tab-target="retrieval"
-          >
-            Retrieval Function
-          </button>
-        </div>
       </section>
 
-      <section
-        class="tab-panel is-active"
-        id="tab-panel-simulator"
-        role="tabpanel"
-        aria-labelledby="tab-button-simulator"
-        data-tab-panel="simulator"
-      >
-        <main class="dashboard">
-          <section class="card workbench-panel">
-            <div class="section-heading">
-              <div>
-                <h2>Select the documents and then ask your question</h2>
-              </div>
-              <span class="status-pill" id="pipeline-status">Waiting for documents</span>
-            </div>
+      <section class="page-section" id="simulator-section">
+        <section class="section-intro">
+          <p class="section-kicker">Interactive demo</p>
+          <h2>Inspect the full retrieval workflow, not just the final answer.</h2>
+          <p>
+            Choose documents, run chunking and embeddings, compare ranked passages, and move through the teaching tabs
+            to understand each stage of the pipeline in a single portfolio-style experience.
+          </p>
+        </section>
 
-            <p class="helper-copy" id="simulator-copy">
-              This view lets students run the entire pipeline and inspect every intermediate representation.
-            </p>
+        <section class="tabs card" id="pipeline-section" aria-label="Content tabs">
+          <div class="tab-list" role="tablist">
+            <button
+              class="tab-button is-active"
+              id="tab-button-simulator"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="tab-panel-simulator"
+              data-tab-target="simulator"
+            >
+              Simulator
+            </button>
+            <button
+              class="tab-button"
+              id="tab-button-extracting"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-panel-extracting"
+              data-tab-target="extracting"
+            >
+              Extracting Text
+            </button>
+            <button
+              class="tab-button"
+              id="tab-button-splitting"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-panel-splitting"
+              data-tab-target="splitting"
+            >
+              Split Paragraphs
+            </button>
+            <button
+              class="tab-button"
+              id="tab-button-embeddings"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-panel-embeddings"
+              data-tab-target="embeddings"
+            >
+              Embeddings
+            </button>
+            <button
+              class="tab-button"
+              id="tab-button-retrieval"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-panel-retrieval"
+              data-tab-target="retrieval"
+            >
+              Retrieval Function
+            </button>
+          </div>
+        </section>
 
-            <div class="upload-stage">
-              <label class="upload-dropzone" for="file-input">
-                <input id="file-input" type="file" multiple accept=".pdf,.docx,.txt,.md" />
-                <strong>Drop documents here or click to browse</strong>
-                <span>Supported in the browser: PDF, DOCX, TXT, and Markdown files.</span>
-              </label>
-
-              <div class="button-row">
-                <button class="secondary-button" id="load-demo-button" type="button">Load demo documents</button>
-                <button class="primary-button" id="run-pipeline-button" type="button">Run pipeline</button>
-                <button class="ghost-button" id="reset-button" type="button">Reset</button>
-              </div>
-            </div>
-
-            <section class="control-grid" aria-label="Pipeline controls">
-              <div class="range-card">
-                <label class="range-label" for="top-k-range">
-                  <span>Top-k retrieved passages</span>
-                  <strong id="top-k-value">3</strong>
-                </label>
-                <input id="top-k-range" type="range" min="1" max="5" step="1" value="3" />
-              </div>
-              <div class="range-card">
-                <label class="range-label" for="min-length-range">
-                  <span>Minimum paragraph length</span>
-                  <strong id="min-length-value">50 chars</strong>
-                </label>
-                <input id="min-length-range" type="range" min="20" max="120" step="5" value="50" />
-              </div>
-            </section>
-
-            <section class="question-stage">
-              <div class="question-heading">
+        <section
+          class="tab-panel is-active"
+          id="tab-panel-simulator"
+          role="tabpanel"
+          aria-labelledby="tab-button-simulator"
+          data-tab-panel="simulator"
+        >
+          <main class="dashboard">
+            <section class="card workbench-panel">
+              <div class="section-heading">
                 <div>
-                  <p class="section-kicker">Retrieval prompt</p>
-                  <h3>Ask a question about the chosen documents</h3>
+                  <p class="section-kicker">Interactive demo</p>
+                  <h2>Select the documents and then ask your question</h2>
+                </div>
+                <span class="status-pill" id="pipeline-status">Waiting for documents</span>
+              </div>
+
+              <p class="helper-copy" id="simulator-copy">
+                This view lets students run the entire pipeline and inspect every intermediate representation.
+              </p>
+
+              <div class="upload-stage">
+                <label class="upload-dropzone" for="file-input">
+                  <input id="file-input" type="file" multiple accept=".pdf,.docx,.txt,.md" />
+                  <strong>Drop documents here or click to browse</strong>
+                  <span>Supported in the browser: PDF, DOCX, TXT, and Markdown files.</span>
+                </label>
+
+                <div class="button-row">
+                  <button class="secondary-button" id="load-demo-button" type="button">Load demo documents</button>
+                  <button class="primary-button" id="run-pipeline-button" type="button">Run pipeline</button>
+                  <button class="ghost-button" id="reset-button" type="button">Reset</button>
                 </div>
               </div>
-              <textarea
-                id="query-input"
-                class="query-input"
-                rows="4"
-                placeholder="Example: How is backtesting used in validation of a rating model?"
-              ></textarea>
-              <div class="suggestion-row" id="suggestion-row" aria-label="Suggested questions"></div>
-              <div class="button-row">
-                <button class="primary-button" id="ask-button" type="button">Ask the documents</button>
-              </div>
-            </section>
 
-          </section>
-
-          <section class="card observatory-panel">
-            <div class="observatory-grid">
-              <section class="answer-card" id="answer-card" aria-live="polite">
-                <p class="card-kicker">Grounded answer</p>
-                <h3>RAG answers</h3>
-                <p class="answer-state" id="answer-title">No answer yet</p>
-                <p class="answer-copy" id="answer-copy">
-                  Upload or load documents, run the pipeline, and submit a question to generate a grounded answer.
-                </p>
-                <div class="source-tags" id="answer-sources"></div>
+              <section class="control-grid" aria-label="Pipeline controls">
+                <div class="range-card">
+                  <label class="range-label" for="top-k-range">
+                    <span>Top-k retrieved passages</span>
+                    <strong id="top-k-value">3</strong>
+                  </label>
+                  <input id="top-k-range" type="range" min="1" max="5" step="1" value="3" />
+                </div>
+                <div class="range-card">
+                  <label class="range-label" for="min-length-range">
+                    <span>Minimum paragraph length</span>
+                    <strong id="min-length-value">50 chars</strong>
+                  </label>
+                  <input id="min-length-range" type="range" min="20" max="120" step="5" value="50" />
+                </div>
               </section>
 
-              <article class="visual-card">
-                <div class="visual-header">
+              <section class="question-stage">
+                <div class="question-heading">
                   <div>
-                    <p class="card-kicker">Semantic space</p>
-                    <h3>Projected paragraph map</h3>
+                    <p class="section-kicker">Retrieval prompt</p>
+                    <h3>Ask a question about the chosen documents</h3>
                   </div>
                 </div>
-                <p class="visual-copy">
-                  Each dot is a paragraph embedding projected into a teaching-friendly 2D map. The query appears after
-                  retrieval and the closest passages glow more strongly.
-                </p>
-                <div class="semantic-map-shell">
-                  <div class="semantic-map" id="semantic-map">
-                    <div class="semantic-map-empty">Paragraph points will appear here after the pipeline runs.</div>
-                  </div>
+                <textarea
+                  id="query-input"
+                  class="query-input"
+                  rows="4"
+                  placeholder="Example: How is backtesting used in validation of a rating model?"
+                ></textarea>
+                <div class="suggestion-row" id="suggestion-row" aria-label="Suggested questions"></div>
+                <div class="button-row">
+                  <button class="primary-button" id="ask-button" type="button">Ask the documents</button>
                 </div>
-              </article>
+              </section>
+            </section>
 
-              <article class="visual-card">
-                <div class="visual-header">
-                  <div>
-                    <p class="card-kicker">Ranking</p>
-                    <h3>Top retrieved paragraphs</h3>
+            <section class="card observatory-panel">
+              <div class="observatory-grid">
+                <section class="answer-card" id="answer-card" aria-live="polite">
+                  <p class="card-kicker">Grounded answer</p>
+                  <h3>RAG answers</h3>
+                  <p class="answer-state" id="answer-title">No answer yet</p>
+                  <p class="answer-copy" id="answer-copy">
+                    Upload or load documents, run the pipeline, and submit a question to generate a grounded answer.
+                  </p>
+                  <div class="source-tags" id="answer-sources"></div>
+                </section>
+
+                <article class="visual-card">
+                  <div class="visual-header">
+                    <div>
+                      <p class="card-kicker">Semantic space</p>
+                      <h3>Projected paragraph map</h3>
+                    </div>
                   </div>
-                </div>
-                <p class="visual-copy">
-                  Cosine similarity ranks the passages. Higher bars mean stronger semantic alignment with the query.
-                </p>
-                <div class="ranking-list" id="ranking-list">
-                  <div class="empty-message">Run a query to populate the ranking list.</div>
-                </div>
+                  <p class="visual-copy">
+                    Each dot is a paragraph embedding projected into a teaching-friendly 2D map. The query appears
+                    after retrieval and the closest passages glow more strongly.
+                  </p>
+                  <div class="semantic-map-shell">
+                    <div class="semantic-map" id="semantic-map">
+                      <div class="semantic-map-empty">Paragraph points will appear here after the pipeline runs.</div>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="visual-card">
+                  <div class="visual-header">
+                    <div>
+                      <p class="card-kicker">Ranking</p>
+                      <h3>Top retrieved paragraphs</h3>
+                    </div>
+                  </div>
+                  <p class="visual-copy">
+                    Cosine similarity ranks the passages. Higher bars mean stronger semantic alignment with the query.
+                  </p>
+                  <div class="ranking-list" id="ranking-list">
+                    <div class="empty-message">Run a query to populate the ranking list.</div>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </main>
+        </section>
+
+        <section
+          class="tab-panel"
+          id="tab-panel-extracting"
+          role="tabpanel"
+          aria-labelledby="tab-button-extracting"
+          data-tab-panel="extracting"
+          hidden
+        >
+          <section class="card topic-card">
+            <div class="topic-layout">
+              <div>
+                <p class="section-kicker" id="extracting-kicker"></p>
+                <h2 id="extracting-title"></h2>
+                <p class="topic-copy" id="extracting-copy"></p>
+                <div class="reference-action-row" id="extracting-reference-actions"></div>
+              </div>
+              <article class="code-card extraction-reference-card is-titleless">
+                <div class="reference-output" id="extracting-reference-output"></div>
               </article>
             </div>
           </section>
-        </main>
-      </section>
-
-      <section
-        class="tab-panel"
-        id="tab-panel-extracting"
-        role="tabpanel"
-        aria-labelledby="tab-button-extracting"
-        data-tab-panel="extracting"
-        hidden
-      >
-        <section class="card topic-card">
-          <div class="topic-layout">
-            <div>
-              <p class="section-kicker" id="extracting-kicker"></p>
-              <h2 id="extracting-title"></h2>
-              <p class="topic-copy" id="extracting-copy"></p>
-              <div class="reference-action-row" id="extracting-reference-actions"></div>
-            </div>
-            <article class="code-card extraction-reference-card is-titleless">
-              <div class="reference-output" id="extracting-reference-output"></div>
-            </article>
-          </div>
-        </section>
-      </section>
-
-      <section
-        class="tab-panel"
-        id="tab-panel-splitting"
-        role="tabpanel"
-        aria-labelledby="tab-button-splitting"
-        data-tab-panel="splitting"
-        hidden
-      >
-        <section class="card topic-card">
-          <div class="topic-layout">
-            <div>
-              <p class="section-kicker" id="splitting-kicker"></p>
-              <h2 id="splitting-title"></h2>
-              <p class="topic-copy" id="splitting-copy"></p>
-              <div class="reference-action-row" id="splitting-reference-actions"></div>
-            </div>
-            <article class="code-card splitting-reference-card">
-              <h3 id="splitting-reference-title">Python reference</h3>
-              <div class="reference-output" id="splitting-reference-output"></div>
-            </article>
-          </div>
-        </section>
-      </section>
-
-      <section
-        class="tab-panel"
-        id="tab-panel-embeddings"
-        role="tabpanel"
-        aria-labelledby="tab-button-embeddings"
-        data-tab-panel="embeddings"
-        hidden
-      >
-        <section class="card topic-card">
-          <div class="topic-layout">
-            <div>
-              <p class="section-kicker" id="embeddings-kicker"></p>
-              <h2 id="embeddings-title"></h2>
-              <p class="topic-copy" id="embeddings-copy"></p>
-              <div class="bullet-list" id="embeddings-bullets"></div>
-            </div>
-            <article class="code-card">
-              <p class="card-kicker">Python reference</p>
-              <pre class="code-block"><code id="embeddings-code"></code></pre>
-            </article>
-          </div>
         </section>
 
-        <section class="card live-card">
-          <div class="section-heading">
-            <div>
-              <p class="section-kicker">Live vectors</p>
-              <h2>Embedding previews</h2>
-            </div>
-          </div>
-          <div class="embedding-grid" id="embedding-grid">
-            <div class="empty-message">Run the pipeline to preview paragraph embeddings.</div>
-          </div>
-        </section>
-
-        <section class="card live-card embedding-explorer-card">
-          <div class="embedding-explorer">
-            <div class="embedding-stage-list" id="embedding-details-grid"></div>
-            <div class="embedding-stage-display" id="embedding-stage-display">
-              <div class="empty-message">Run the pipeline and select a paragraph from Embedding previews to inspect its embedding journey.</div>
-            </div>
-          </div>
-        </section>
-      </section>
-
-      <section
-        class="tab-panel"
-        id="tab-panel-retrieval"
-        role="tabpanel"
-        aria-labelledby="tab-button-retrieval"
-        data-tab-panel="retrieval"
-        hidden
-      >
-        <section class="card topic-card">
-          <div class="topic-layout">
-            <div>
-              <p class="section-kicker" id="retrieval-kicker"></p>
-              <h2 id="retrieval-title"></h2>
-              <p class="topic-copy" id="retrieval-copy"></p>
-              <div class="bullet-list" id="retrieval-bullets"></div>
-            </div>
-            <article class="code-card">
-              <p class="card-kicker">Python reference</p>
-              <pre class="code-block"><code id="retrieval-code"></code></pre>
-            </article>
-          </div>
-        </section>
-
-        <section class="card live-card">
-          <div class="section-heading">
-            <div>
-              <p class="section-kicker">Live retrieval</p>
-              <h2>Similarity map and supporting passages</h2>
-            </div>
-          </div>
-          <div class="retrieval-grid">
-            <div class="retrieval-sidebar">
-              <div class="query-card">
-                <p class="card-kicker">Current query</p>
-                <h3 id="retrieval-query-title">No query yet</h3>
-                <p id="retrieval-query-copy" class="topic-copy">
-                  Submit a question to see how the query embedding is compared against every paragraph.
-                </p>
-              </div>
-              <div class="retrieval-results" id="retrieval-results">
-                <div class="empty-message">Retrieved passages will appear here after a query.</div>
-              </div>
-            </div>
-            <div class="retrieval-chart-panel" id="retrieval-chart-panel">
-              <div class="empty-message">Run a query to draw the retrieval map.</div>
-            </div>
-          </div>
-        </section>
-      </section>
-
-      <section class="card contact-panel" id="contact-panel" aria-labelledby="contact-title">
-        <div class="contact-header">
-          <div class="contact-copy">
-            <p class="section-kicker">Contact</p>
-            <h2 id="contact-title">Ask a question directly from the simulator</h2>
-          </div>
-          <span class="panel-chip">In-platform contact form</span>
-        </div>
-
-        <div class="contact-meta">
-          <p class="helper-copy">
-            For more information, visit
-            <a href="https://helvetic-ai-compass.ch/" target="_blank" rel="noreferrer">https://helvetic-ai-compass.ch/</a>.
-          </p>
-        </div>
-
-        <form
-          id="contact-form"
-          class="contact-form"
-          action="https://formsubmit.co/cezar.chirila@helvetic-ai-compass.ch"
-          method="POST"
+        <section
+          class="tab-panel"
+          id="tab-panel-splitting"
+          role="tabpanel"
+          aria-labelledby="tab-button-splitting"
+          data-tab-panel="splitting"
+          hidden
         >
-          <input type="hidden" name="_subject" value="RAG simulator inquiry" />
-          <input type="hidden" name="_template" value="table" />
-          <input type="hidden" name="_url" id="contact-form-url" value="" />
+          <section class="card topic-card">
+            <div class="topic-layout">
+              <div>
+                <p class="section-kicker" id="splitting-kicker"></p>
+                <h2 id="splitting-title"></h2>
+                <p class="topic-copy" id="splitting-copy"></p>
+                <div class="reference-action-row" id="splitting-reference-actions"></div>
+              </div>
+              <article class="code-card splitting-reference-card">
+                <h3 id="splitting-reference-title">Python reference</h3>
+                <div class="reference-output" id="splitting-reference-output"></div>
+              </article>
+            </div>
+          </section>
+        </section>
 
-          <div class="contact-grid">
-            <div class="contact-field">
-              <label for="contact-name">Full name</label>
-              <input id="contact-name" type="text" name="name" autocomplete="name" required />
+        <section
+          class="tab-panel"
+          id="tab-panel-embeddings"
+          role="tabpanel"
+          aria-labelledby="tab-button-embeddings"
+          data-tab-panel="embeddings"
+          hidden
+        >
+          <section class="card topic-card">
+            <div class="topic-layout">
+              <div>
+                <p class="section-kicker" id="embeddings-kicker"></p>
+                <h2 id="embeddings-title"></h2>
+                <p class="topic-copy" id="embeddings-copy"></p>
+                <div class="bullet-list" id="embeddings-bullets"></div>
+              </div>
+              <article class="code-card">
+                <p class="card-kicker">Python reference</p>
+                <pre class="code-block"><code id="embeddings-code"></code></pre>
+              </article>
+            </div>
+          </section>
+
+          <section class="card live-card">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">Live vectors</p>
+                <h2>Embedding previews</h2>
+              </div>
+            </div>
+            <div class="embedding-grid" id="embedding-grid">
+              <div class="empty-message">Run the pipeline to preview paragraph embeddings.</div>
+            </div>
+          </section>
+
+          <section class="card live-card embedding-explorer-card">
+            <div class="embedding-explorer">
+              <div class="embedding-stage-list" id="embedding-details-grid"></div>
+              <div class="embedding-stage-display" id="embedding-stage-display">
+                <div class="empty-message">
+                  Run the pipeline and select a paragraph from Embedding previews to inspect its embedding journey.
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section
+          class="tab-panel"
+          id="tab-panel-retrieval"
+          role="tabpanel"
+          aria-labelledby="tab-button-retrieval"
+          data-tab-panel="retrieval"
+          hidden
+        >
+          <section class="card topic-card">
+            <div class="topic-layout">
+              <div>
+                <p class="section-kicker" id="retrieval-kicker"></p>
+                <h2 id="retrieval-title"></h2>
+                <p class="topic-copy" id="retrieval-copy"></p>
+                <div class="bullet-list" id="retrieval-bullets"></div>
+              </div>
+              <article class="code-card">
+                <p class="card-kicker">Python reference</p>
+                <pre class="code-block"><code id="retrieval-code"></code></pre>
+              </article>
+            </div>
+          </section>
+
+          <section class="card live-card">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">Live retrieval</p>
+                <h2>Similarity map and supporting passages</h2>
+              </div>
+            </div>
+            <div class="retrieval-grid">
+              <div class="retrieval-sidebar">
+                <div class="query-card">
+                  <p class="card-kicker">Current query</p>
+                  <h3 id="retrieval-query-title">No query yet</h3>
+                  <p id="retrieval-query-copy" class="topic-copy">
+                    Submit a question to see how the query embedding is compared against every paragraph.
+                  </p>
+                </div>
+                <div class="retrieval-results" id="retrieval-results">
+                  <div class="empty-message">Retrieved passages will appear here after a query.</div>
+                </div>
+              </div>
+              <div class="retrieval-chart-panel" id="retrieval-chart-panel">
+                <div class="empty-message">Run a query to draw the retrieval map.</div>
+              </div>
+            </div>
+          </section>
+        </section>
+      </section>
+
+      <section class="footer-panel-grid" aria-label="Support and disclaimer">
+        <section class="card support-card" id="contact-section">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Contact</p>
+              <h2>Ask about the simulator or the teaching setup.</h2>
+            </div>
+            <span class="status-pill">Direct contact form</span>
+          </div>
+
+          <p class="helper-copy contact-copy">
+            For more information, visit
+            <a href="https://helvetic-ai-compass.ch/" target="_blank" rel="noreferrer">helvetic-ai-compass.ch</a>.
+            Messages sent through this form go directly from the simulator interface.
+          </p>
+
+          <form
+            class="support-form"
+            id="contact-form"
+            action="https://formsubmit.co/cezar.chirila@helvetic-ai-compass.ch"
+            method="POST"
+          >
+            <input type="hidden" name="_subject" value="RAG simulator inquiry" />
+            <input type="hidden" name="_template" value="table" />
+            <input type="hidden" name="_url" id="contact-form-url" value="" />
+
+            <div class="panel-subgrid two-up">
+              <label class="field-card" for="contact-name">
+                <span class="field-label">Full name</span>
+                <input class="field-input" id="contact-name" type="text" name="name" autocomplete="name" required />
+              </label>
+
+              <label class="field-card" for="contact-company">
+                <span class="field-label">Company</span>
+                <input
+                  class="field-input"
+                  id="contact-company"
+                  type="text"
+                  name="company"
+                  autocomplete="organization"
+                />
+              </label>
+
+              <label class="field-card" for="contact-email">
+                <span class="field-label">Email address</span>
+                <input
+                  class="field-input"
+                  id="contact-email"
+                  type="email"
+                  name="email"
+                  autocomplete="email"
+                  required
+                />
+              </label>
+
+              <label class="field-card" for="contact-topic">
+                <span class="field-label">Question topic</span>
+                <input
+                  class="field-input"
+                  id="contact-topic"
+                  type="text"
+                  name="topic"
+                  placeholder="Teaching use case, simulator support, methodology..."
+                />
+              </label>
             </div>
 
-            <div class="contact-field">
-              <label for="contact-company">Company</label>
-              <input id="contact-company" type="text" name="company" autocomplete="organization" />
-            </div>
-
-            <div class="contact-field">
-              <label for="contact-email">Email address</label>
-              <input id="contact-email" type="email" name="email" autocomplete="email" required />
-            </div>
-
-            <div class="contact-field">
-              <label for="contact-topic">Question topic</label>
-              <input
-                id="contact-topic"
-                type="text"
-                name="topic"
-                placeholder="Teaching use case, simulator support, methodology..."
-              />
-            </div>
-
-            <div class="contact-field contact-field-full">
-              <label for="contact-question">Question</label>
+            <label class="field-card" for="contact-question">
+              <span class="field-label">Question</span>
               <textarea
+                class="editor-textarea contact-textarea"
                 id="contact-question"
                 name="question"
                 rows="6"
                 placeholder="Write your question, context, or teaching use case here."
                 required
               ></textarea>
+            </label>
+
+            <div class="contact-form-actions">
+              <button class="primary-button" id="contact-submit-button" type="submit">Send question</button>
+              <p class="contact-status" id="contact-status" aria-live="polite"></p>
             </div>
+          </form>
+        </section>
+
+        <section class="card disclaimer-card">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Disclaimer</p>
+              <h2>Educational use only</h2>
+            </div>
+            <span class="status-pill">Non-commercial material</span>
           </div>
 
-          <div class="contact-actions">
-            <button class="primary-button" id="contact-submit-button" type="submit">Send question</button>
-            <p class="contact-status" id="contact-status" aria-live="polite"></p>
-          </div>
-        </form>
-      </section>
-
-      <section class="card disclaimer-panel" aria-labelledby="disclaimer-title">
-        <div class="disclaimer-header">
-          <div>
-            <p class="section-kicker">Disclaimer</p>
-            <h2 id="disclaimer-title">Educational use only</h2>
-          </div>
-          <span class="panel-chip panel-chip-subtle">Non-commercial material</span>
-        </div>
-        <div class="disclaimer-copy">
-          <p>
+          <p class="helper-copy">
             The materials, models, code, methodologies, outputs, and visualizations made available through this
             simulator are provided solely for educational, training, and illustrative purposes.
           </p>
-          <p>
+          <p class="helper-copy">
             They do not constitute legal, regulatory, accounting, audit, tax, investment, model risk management,
             credit risk, or any other professional advice, and they must not be relied upon for production,
             commercial, client-facing, regulatory, or other business-critical use cases.
           </p>
-          <p>
-            No representation or warranty, express or implied, is made as to the accuracy, completeness, fitness for
-            purpose, or regulatory suitability of the content. Any commercial exploitation or operational deployment is
-            strictly prohibited unless independently validated and reviewed by appropriately qualified professionals
-            under the relevant governance framework.
+          <p class="helper-copy">
+            Any commercial exploitation or operational deployment would require independent validation and review by
+            appropriately qualified professionals under the relevant governance framework.
           </p>
-        </div>
+        </section>
       </section>
     </div>
 
