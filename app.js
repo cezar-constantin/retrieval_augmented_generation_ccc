@@ -947,6 +947,15 @@ function renderDocumentationContent() {
   elements.heroEyebrow.textContent = hero.eyebrow;
   elements.heroTitle.textContent = hero.title;
   elements.heroText.textContent = hero.text;
+  const description = tabs.description;
+  const descriptionKicker = document.getElementById("description-kicker");
+  descriptionKicker.textContent = description.kicker;
+  descriptionKicker.hidden = !description.kicker;
+  document.getElementById("description-title").textContent = description.title;
+  document.getElementById("description-copy").textContent = description.copy;
+  const descriptionBullets = document.getElementById("description-bullets");
+  renderBulletList(descriptionBullets, description.bullets);
+  descriptionBullets.hidden = !description.bullets.length;
   elements.simulatorCopy.textContent = tabs.simulator.copy;
   const simulatorNoteNode = document.getElementById("simulator-note");
   if (simulatorNoteNode) {
@@ -995,7 +1004,7 @@ function setupTabs() {
     button.addEventListener("click", () => {
       const target = button.dataset.tabTarget;
       elements.tabButtons.forEach((candidate) => {
-        const isActive = candidate === button;
+        const isActive = candidate.dataset.tabTarget === target;
         candidate.classList.toggle("is-active", isActive);
         candidate.setAttribute("aria-selected", String(isActive));
       });

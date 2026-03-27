@@ -288,6 +288,13 @@ svg {
   align-content: start;
 }
 
+.hero-title-row {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+}
+
 .eyebrow,
 .section-kicker,
 .card-kicker,
@@ -433,6 +440,10 @@ svg {
 .section-intro {
   padding: 8px 4px 0;
   animation: fade-up 720ms 120ms both;
+}
+
+.tabs-ribbon {
+  animation: fade-up 720ms 160ms both;
 }
 
 .section-intro h2 {
@@ -855,6 +866,66 @@ input[type="range"] {
   border-radius: 999px;
   background: linear-gradient(135deg, var(--cyan), var(--blue));
   flex: 0 0 auto;
+}
+
+.description-spotlight,
+.description-card {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.025)),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(11, 15, 26, 0.92));
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.3);
+}
+
+.description-spotlight {
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.description-spotlight p:last-child,
+.description-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.description-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.description-card {
+  padding: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+.description-card h3 {
+  margin: 0;
+  font-family: "Space Grotesk", sans-serif;
+  color: var(--text);
+  line-height: 1.05;
+}
+
+.description-card-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(34, 211, 238, 0.18));
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 .reference-button {
@@ -1417,6 +1488,7 @@ input[type="range"] {
   .observatory-grid,
   .retrieval-grid,
   .topic-layout,
+  .description-grid,
   .detail-grid,
   .embedding-stage-workspace,
   .embedding-comparison-grid {

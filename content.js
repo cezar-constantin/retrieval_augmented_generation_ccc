@@ -8,6 +8,17 @@ export const documentationCopy = {
   simulatorNote:
     "The provided Python script is retrieval-first: it returns the most relevant paragraphs. This simulator keeps that logic, then adds a small grounded synthesis layer so students can also see how retrieved context can feed a final answer in a full RAG story.",
   tabs: {
+    description: {
+      kicker: "Overview",
+      title: "What this simulator is doing",
+      copy:
+        "This simulator demonstrates the full Retrieval Augmented Generation flow in a way that is easy to inspect. It starts with documents, turns them into searchable paragraph representations, compares a question against those representations, and then shows how the retrieved evidence can support a grounded answer.",
+      bullets: [
+        "It keeps the intermediate pipeline steps visible instead of hiding them behind one final output.",
+        "It uses the same idea for document and query embeddings so similarity can be compared consistently.",
+        "It is designed for teaching, so each tab focuses on one stage of the RAG pipeline.",
+      ],
+    },
     simulator: {
       kicker: "Live pipeline",
       title: "Simulator",

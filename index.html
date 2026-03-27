@@ -44,6 +44,17 @@
 
         <div class="top-nav" role="tablist" aria-label="Simulator sections">
           <button
+            class="tab-button"
+            id="tab-button-description"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="tab-panel-description"
+            data-tab-target="description"
+          >
+            Description
+          </button>
+          <button
             class="tab-button is-active"
             id="tab-button-simulator"
             type="button"
@@ -104,7 +115,9 @@
       <section class="hero card" aria-labelledby="hero-title">
         <div class="hero-copy hero-main">
           <p class="eyebrow" id="hero-eyebrow">Portfolio-styled teaching simulator</p>
-          <h1 id="hero-title">Retrieval Augmented Generation</h1>
+          <div class="hero-title-row">
+            <h1 id="hero-title">Retrieval Augmented Generation</h1>
+          </div>
           <p class="hero-text" id="hero-text">
             Upload documents, compute embeddings, retrieve the most relevant passages, and explain the entire RAG
             pipeline visually.
@@ -120,6 +133,130 @@
             Choose documents, run chunking and embeddings, compare ranked passages, and move through the teaching tabs
             to understand each stage of the pipeline in a single portfolio-style experience.
           </p>
+        </section>
+
+        <section class="tabs card tabs-ribbon" id="pipeline-section" aria-label="Content tabs">
+          <div class="tab-list" role="tablist" aria-label="Simulator sections ribbon">
+            <button
+              class="tab-button"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-panel-description"
+              data-tab-target="description"
+            >
+              Description
+            </button>
+            <button
+              class="tab-button is-active"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="tab-panel-simulator"
+              data-tab-target="simulator"
+            >
+              Simulator
+            </button>
+            <button
+              class="tab-button"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-panel-extracting"
+              data-tab-target="extracting"
+            >
+              Extracting Text
+            </button>
+            <button
+              class="tab-button"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-panel-splitting"
+              data-tab-target="splitting"
+            >
+              Split Paragraphs
+            </button>
+            <button
+              class="tab-button"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-panel-embeddings"
+              data-tab-target="embeddings"
+            >
+              Embeddings
+            </button>
+            <button
+              class="tab-button"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="tab-panel-retrieval"
+              data-tab-target="retrieval"
+            >
+              Retrieval Function
+            </button>
+          </div>
+        </section>
+
+        <section
+          class="tab-panel"
+          id="tab-panel-description"
+          role="tabpanel"
+          aria-labelledby="tab-button-description"
+          data-tab-panel="description"
+          hidden
+        >
+          <section class="card topic-card">
+            <div class="topic-layout">
+              <div>
+                <p class="section-kicker" id="description-kicker"></p>
+                <h2 id="description-title"></h2>
+                <p class="topic-copy" id="description-copy"></p>
+                <div class="bullet-list" id="description-bullets"></div>
+              </div>
+              <article class="description-spotlight">
+                <p class="card-kicker">In practice</p>
+                <h3>It shows how a question becomes evidence, then how evidence becomes a grounded answer.</h3>
+                <p>
+                  Instead of hiding the retrieval process behind one result, the simulator keeps each stage visible so
+                  students can see where the answer came from and why certain paragraphs were selected.
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section class="card live-card">
+            <div class="section-heading">
+              <div>
+                <p class="section-kicker">How To Use It</p>
+                <h2>What the simulator lets a learner do</h2>
+              </div>
+            </div>
+            <div class="description-grid">
+              <article class="description-card">
+                <span class="description-card-index">01</span>
+                <h3>Load source documents</h3>
+                <p>Bring in PDFs, DOCX, TXT, or Markdown files so the simulator has material to search.</p>
+              </article>
+              <article class="description-card">
+                <span class="description-card-index">02</span>
+                <h3>Watch the text become searchable</h3>
+                <p>See extraction, paragraph splitting, and embeddings turn raw text into comparable vectors.</p>
+              </article>
+              <article class="description-card">
+                <span class="description-card-index">03</span>
+                <h3>Ask a real question</h3>
+                <p>Submit a query and inspect how the query is matched against every paragraph in the document set.</p>
+              </article>
+              <article class="description-card">
+                <span class="description-card-index">04</span>
+                <h3>Compare answer and evidence</h3>
+                <p>Review the ranked passages, semantic map, and grounded answer side by side in one teaching flow.</p>
+              </article>
+            </div>
+          </section>
         </section>
 
         <section
